@@ -1,0 +1,18 @@
+{
+  "fields": [
+    {"name": "title", "selector": "title", "selector_type": "css", "value_type": "text"},
+    {"name": "h1", "selector": "h1", "selector_type": "css", "value_type": "text"},
+    {"name": "canonical", "selector": "link[rel=\\"canonical\\"]", "selector_type": "css", "value_type": "attr", "attr": "href"}
+  ],
+  "lists": [
+    {
+      "name": "links",
+      "item_selector": "a",
+      "selector_type": "css",
+      "fields": [
+        {"name": "text", "selector": ":scope", "selector_type": "css", "value_type": "text"},
+        {"name": "href", "selector": ":scope", "selector_type": "css", "value_type": "attr", "attr": "href"}
+      ]
+    }
+  ]
+}
