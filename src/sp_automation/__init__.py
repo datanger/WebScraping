@@ -1,18 +1,30 @@
 """
-中文说明：SharePoint 自动化（Playwright）包入口。
-对应计划：创建模块化项目结构与配置读取。
+WebScraping 通用模块包入口
+提供与业务无关的通用功能模块
 包含模块：
 - config：配置与环境变量读取
 - browser：浏览器与上下文封装
-- session：初始化并持久化登录会话
-- sharepoint：SharePoint 导航与常用操作
-- scraping：通用抓取函数
+- session：会话管理
+- extractor：数据抽取
+- element_detector：元素检测
+- page_operations：页面操作
+- safe_operations：安全操作（SharePoint文件保护）
+- otp_providers：OTP认证
+- sharepoint_scanner：SharePoint 文件结构扫描器核心
+- file_downloader：文件下载器
+- recursive_scanner：递归扫描器
 """
 
 __all__ = [
     "config",
-    "browser",
+    "browser", 
     "session",
-    "sharepoint",
-    "scraping",
+    "extractor",
+    "element_detector",
+    "page_operations",
+    "safe_operations",
+    "otp_providers",
+    "sharepoint_scanner",
+    "file_downloader",
+    "recursive_scanner",
 ]

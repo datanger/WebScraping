@@ -24,6 +24,9 @@ class Settings:
     headless: bool = os.getenv("SP_HEADLESS", "true").lower() == "true"
     slow_mo_ms: int = int(os.getenv("SP_SLOWMO_MS", "0"))
     proxy: Optional[str] = os.getenv("SP_PROXY", None)
+    browser_type: str = os.getenv("SP_BROWSER_TYPE", "chromium")  # chromium|edge|firefox
+    persistent_mode: bool = os.getenv("SP_PERSISTENT_MODE", "false").lower() == "true"
+    user_data_dir: str = os.getenv("SP_USER_DATA_DIR", "storage/browser_profile")
 
     # 超时设置（ms）
     default_timeout_ms: int = int(os.getenv("SP_TIMEOUT_MS", "30000"))
@@ -38,6 +41,10 @@ class Settings:
     imap_folder: str = os.getenv("SP_IMAP_FOLDER", "INBOX")
     imap_ssl: bool = os.getenv("SP_IMAP_SSL", "true").lower() == "true"
     imap_search_subject_kw: str = os.getenv("SP_IMAP_SUBJECT_KW", "Microsoft 验证码")
+    
+    # 下载设置
+    download_method: str = os.getenv("SP_DOWNLOAD_METHOD", "browser_default")  # browser_default|intercepted
+    download_path: str = os.getenv("SP_DOWNLOAD_PATH", "")  # 空字符串表示使用浏览器默认路径
 
 
 settings = Settings()
