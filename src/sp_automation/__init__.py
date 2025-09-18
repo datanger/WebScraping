@@ -35,4 +35,5 @@ __all__ = [
     "cdp_download_monitor",
     "aria2_downloader",
     "browser_aria2_bridge",
+    "login_status_detector",
 ]

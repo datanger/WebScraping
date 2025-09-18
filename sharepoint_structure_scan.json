@@ -1,0 +1,77 @@
+{
+  "scan_time": "2025-09-18T09:47:49.445983",
+  "target_url": "https://scautoeng.sharepoint.com/sites/KOTEI-SCAE/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FKOTEI%2DSCAE%2FShared%20Documents%2FGEN1%2E5%E4%B8%AD%E5%9B%BDFOT%2F%E3%83%87%E3%83%BC%E3%82%BF%E8%A7%A3%E6%9E%90%2F%E8%AA%8D%E8%AD%98%E7%B3%BB%2F%E8%B5%B0%E8%B7%AF%E8%AA%8D%E8%AD%98%2F%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E6%A4%9C%E8%A8%8E%2FTest&viewid=8e19c37a%2Dacdb%2D4c40%2Da22e%2D92e27e7e3366&csf=1&web=1&e=NWcbWt&FolderCTID=0x01200090D0082931AED242A8680C59FF4AF68D",
+  "path_info": {
+    "site_url": "https://scautoeng.sharepoint.com",
+    "site_path": "/sites/KOTEI-SCAE/Shared%20Documents/Forms/AllItems.aspx",
+    "query_params": {
+      "id": [
+        "/sites/KOTEI-SCAE/Shared Documents/GEN1.5中国FOT/データ解析/認識系/走路認識/スクリプト検討/Test"
+      ],
+      "viewid": [
+        "8e19c37a-acdb-4c40-a22e-92e27e7e3366"
+      ],
+      "csf": [
+        "1"
+      ],
+      "web": [
+        "1"
+      ],
+      "e": [
+        "NWcbWt"
+      ],
+      "FolderCTID": [
+        "0x01200090D0082931AED242A8680C59FF4AF68D"
+      ]
+    },
+    "full_url": "https://scautoeng.sharepoint.com/sites/KOTEI-SCAE/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FKOTEI%2DSCAE%2FShared%20Documents%2FGEN1%2E5%E4%B8%AD%E5%9B%BDFOT%2F%E3%83%87%E3%83%BC%E3%82%BF%E8%A7%A3%E6%9E%90%2F%E8%AA%8D%E8%AD%98%E7%B3%BB%2F%E8%B5%B0%E8%B7%AF%E8%AA%8D%E8%AD%98%2F%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E6%A4%9C%E8%A8%8E%2FTest&viewid=8e19c37a%2Dacdb%2D4c40%2Da22e%2D92e27e7e3366&csf=1&web=1&e=NWcbWt&FolderCTID=0x01200090D0082931AED242A8680C59FF4AF68D",
+    "encoded_path": "/sites/KOTEI-SCAE/Shared Documents/GEN1.5中国FOT/データ解析/認識系/走路認識/スクリプト検討/Test",
+    "decoded_path": "/sites/KOTEI-SCAE/Shared Documents/GEN1.5中国FOT/データ解析/認識系/走路認識/スクリプト検討/Test",
+    "folder_path": "GEN1.5中国FOT/データ解析/認識系/走路認識/スクリプト検討/Test",
+    "path_parts": [
+      "GEN1.5中国FOT",
+      "データ解析",
+      "認識系",
+      "走路認識",
+      "スクリプト検討",
+      "Test"
+    ],
+    "current_folder": "Test",
+    "parent_folders": [
+      "GEN1.5中国FOT",
+      "データ解析",
+      "認識系",
+      "走路認識",
+      "スクリプト検討"
+    ]
+  },
+  "folders": [],
+  "files": [],
+  "downloadable_files": [],
+  "total_items": 0,
+  "scan_status": "failed",
+  "debug_info": {
+    "page_info": {
+      "title": "登录到您的帐户",
+      "url": "https://login.microsoftonline.com/846d02b4-e139-4807-9bed-5b397afb32b5/oauth2/authorize?client%5Fid=00000003%2D0000%2D0ff1%2Dce00%2D000000000000&response%5Fmode=form%5Fpost&response%5Ftype=code%20id%5Ftoken&resource=00000003%2D0000%2D0ff1%2Dce00%2D000000000000&scope=openid&nonce=E59BD511E3F071169CB040FB2A996C511F472C97FF7A7348%2D28CBD2506E13FECC608A0DAB61914C0C7FAF9E55721B61EC68C28B0485FA773F&redirect%5Furi=https%3A%2F%2Fscautoeng%2Esharepoint%2Ecom%2F%5Fforms%2Fdefault%2Easpx&state=OD0w&login%5Fhint=nie%2Ejie%40kotei%2Ecom%2Ecn&claims=%7B%22id%5Ftoken%22%3A%7B%22xms%5Fcc%22%3A%7B%22values%22%3A%5B%22CP1%22%5D%7D%7D%7D&wsucxt=1&cobrandid=11bd8083%2D87e0%2D41b5%2Dbb78%2D0bc43c8a8e8a&client%2Drequest%2Did=e8cac6a1%2Db006%2D5000%2De952%2D1bbd891eab1c",
+      "ready_state": "complete",
+      "domain": "login.microsoftonline.com",
+      "pathname": "/846d02b4-e139-4807-9bed-5b397afb32b5/oauth2/authorize",
+      "search": "?client%5Fid=00000003%2D0000%2D0ff1%2Dce00%2D000000000000&response%5Fmode=form%5Fpost&response%5Ftype=code%20id%5Ftoken&resource=00000003%2D0000%2D0ff1%2Dce00%2D000000000000&scope=openid&nonce=E59BD511E3F071169CB040FB2A996C511F472C97FF7A7348%2D28CBD2506E13FECC608A0DAB61914C0C7FAF9E55721B61EC68C28B0485FA773F&redirect%5Furi=https%3A%2F%2Fscautoeng%2Esharepoint%2Ecom%2F%5Fforms%2Fdefault%2Easpx&state=OD0w&login%5Fhint=nie%2Ejie%40kotei%2Ecom%2Ecn&claims=%7B%22id%5Ftoken%22%3A%7B%22xms%5Fcc%22%3A%7B%22values%22%3A%5B%22CP1%22%5D%7D%7D%7D&wsucxt=1&cobrandid=11bd8083%2D87e0%2D41b5%2Dbb78%2D0bc43c8a8e8a&client%2Drequest%2Did=e8cac6a1%2Db006%2D5000%2De952%2D1bbd891eab1c",
+      "hash": "",
+      "referrer": "https://scautoeng.sharepoint.com/",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0",
+      "viewport": {
+        "width": 1177,
+        "height": 1264
+      },
+      "cookies": "MicrosoftApplicationsTelemetryDeviceId=320e6faf-b2b3-489c-b31e-3e3f4730c6c0; brcap=0; MSFPC=GUID=2db942e9d1f0414da3fe23e794225395&HASH=2db9&LV=202509&V=4&LU=1758072811837; wlidperf=FR=L&ST=1758087772551; ESTSAUTHLIGHT=+008bf439-3cd2-5978-175d-8c4275458b9c",
+      "has_sharepoint_elements": false
+    },
+    "url_redirects": [],
+    "error_details": {},
+    "network_logs": [],
+    "console_logs": []
+  },
+  "error": "Page.wait_for_timeout: Target page, context or browser has been closed"
+}

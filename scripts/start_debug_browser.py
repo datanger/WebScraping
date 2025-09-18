@@ -60,6 +60,11 @@ def start_debug_browser():
         "--disable-web-security",
         "--disable-features=VizDisplayCompositor"
     ]
+
+    # 若提供了 TARGET_URL 环境变量，则在启动时直接打开该地址
+    target_url = os.getenv("TARGET_URL")
+    if target_url:
+        cmd.append(target_url)
     
     print("🚀 启动带调试模式的浏览器...")
     print(f"   命令: {' '.join(cmd)}")
@@ -83,13 +88,19 @@ def start_debug_browser():
         )
         print(f"✅ 浏览器已启动 (PID: {process.pid})")
         print("   浏览器将在后台持续运行，即使程序退出也不会关闭")
+
+        # 非交互模式：通过环境变量 AUTO_CONTINUE=1 跳过等待输入
+        if os.getenv("AUTO_CONTINUE", "0") == "1":
+            print("🔧 检测到 AUTO_CONTINUE=1，跳过等待用户输入，直接返回")
+            return True
+
         print("   请在浏览器中完成登录，然后按回车键继续...")
         input()
-        
+
         # 不等待进程结束，让浏览器在后台继续运行
         print("💡 浏览器进程已分离，程序退出后浏览器将继续运行")
         print("   如需关闭浏览器，请手动关闭或使用任务管理器")
-        
+
         return True
         
     except Exception as e:

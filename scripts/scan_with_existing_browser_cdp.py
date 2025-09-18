@@ -23,6 +23,7 @@ from src.sp_automation.page_operations import navigate_to_url, check_login_requi
 from src.sp_automation.download_status_detector import create_download_status_manager
 from src.sp_automation.cdp_download_monitor import BrowserDownloadMonitor
 from src.sp_automation.config import settings
+from src.sp_automation.login_status_detector import LoginStatusDetector, LoginPageStatus
 
 
 async def get_download_directory_structure(page, file_info):
@@ -669,6 +670,12 @@ async def batch_download_files(scanner, page, file_elements):
         report_filename = f"unified_batch_download_report_{timestamp}.json"
         report_filepath = logs_dir / report_filename
         
+        # 登录状态检测器与触发控制
+        login_detector = LoginStatusDetector()
+        consecutive_failures = 0
+        zero_speed_since = None
+        login_check_in_progress = False
+
         # 实时更新统一报告文件
         async def update_progress_and_log(result):
             progress_tracker[result["file_index"]] = {
@@ -683,6 +690,53 @@ async def batch_download_files(scanner, page, file_elements):
             }
             # 实时更新统一报告文件
             await update_unified_report_realtime(progress_tracker, total_files, concurrency, report_filepath)
+
+            # 登录状态检测触发逻辑
+            nonlocal consecutive_failures, zero_speed_since, login_check_in_progress
+
+            # 1) 连续失败计数
+            if result.get("status") == "failed":
+                consecutive_failures += 1
+            elif result.get("status") in ("completed", "downloading", "starting"):
+                # 成功或正常进展则重置
+                consecutive_failures = 0
+
+            # 当连续失败达到2次时触发一次登录检测（非阻塞）
+            if consecutive_failures >= int(os.getenv("LOGIN_CHECK_MAX_FAILS", "2")) and not login_check_in_progress:
+                login_check_in_progress = True
+                async def _run_login_check_on_failures():
+                    print("🔐 连续下载失败，触发登录状态检测...")
+                    status = await login_detector.ensure_logged_in(settings.target_url)
+                    print(f"🔐 登录状态: {status}")
+                    nonlocal login_check_in_progress
+                    login_check_in_progress = False
+                asyncio.create_task(_run_login_check_on_failures())
+
+            # 2) 全局零速度检测（计算当前所有任务总速度与活动数）
+            total_speed = 0.0
+            active_downloading = 0
+            for t in progress_tracker.values():
+                total_speed += float(t.get("speed") or 0.0)
+                if t.get("status") == "downloading":
+                    active_downloading += 1
+
+            now_ts = asyncio.get_event_loop().time()
+            if active_downloading == 0 and total_speed <= 0.0001:
+                if zero_speed_since is None:
+                    zero_speed_since = now_ts
+                idle_secs = now_ts - zero_speed_since
+                idle_threshold = float(os.getenv("LOGIN_CHECK_IDLE_SECONDS", "15"))
+                if idle_secs >= idle_threshold and not login_check_in_progress:
+                    login_check_in_progress = True
+                    async def _run_login_check_on_idle():
+                        print("🔐 全局下载速度为0，触发登录状态检测...")
+                        status = await login_detector.ensure_logged_in(settings.target_url)
+                        print(f"🔐 登录状态: {status}")
+                        nonlocal login_check_in_progress
+                        login_check_in_progress = False
+                    asyncio.create_task(_run_login_check_on_idle())
+            else:
+                zero_speed_since = None
         
         # 创建信号量控制并发数量，实现流水线式并行下载
         semaphore = asyncio.Semaphore(concurrency)
