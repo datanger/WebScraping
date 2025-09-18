@@ -13,6 +13,10 @@ WebScraping 通用模块包入口
 - sharepoint_scanner：SharePoint 文件结构扫描器核心
 - file_downloader：文件下载器
 - recursive_scanner：递归扫描器
+- download_status_detector：下载状态检测器
+ - cdp_download_monitor：浏览器原生下载器监控组件
+ - aria2_downloader：aria2c 外部下载器集成
+ - browser_aria2_bridge：浏览器→aria2 桥接组件
 """
 
 __all__ = [
@@ -27,4 +31,8 @@ __all__ = [
     "sharepoint_scanner",
     "file_downloader",
     "recursive_scanner",
+    "download_status_detector",
+    "cdp_download_monitor",
+    "aria2_downloader",
+    "browser_aria2_bridge",
 ]

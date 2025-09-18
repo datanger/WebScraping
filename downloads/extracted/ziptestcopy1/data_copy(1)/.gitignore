@@ -1,0 +1,79 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Logs
+*.log
+system_detector.log
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build artifacts
+build/
+dist/
+*.spec
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Test files
+test_*.py
+demo_*.py
+*_test.py
+
+# Documentation (keep only essential ones)
+# INTERACTIVE_TOOL_README.md
+# PROJECT_STRUCTURE.md
+# MODULAR_PROJECT_SUMMARY.md
+# LOGGING_FEATURES_SUMMARY.md
+# ENHANCED_FEATURES.md
+# CODE_STRUCTURE_AND_FLOW.md
+# TEST_*.md
+# *_SUMMARY.md
+# *_FEATURES.md
+# *_STRUCTURE.md

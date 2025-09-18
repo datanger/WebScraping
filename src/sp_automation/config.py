@@ -45,6 +45,9 @@ class Settings:
     # 下载设置
     download_method: str = os.getenv("SP_DOWNLOAD_METHOD", "browser_default")  # browser_default|intercepted
     download_path: str = os.getenv("SP_DOWNLOAD_PATH", "")  # 空字符串表示使用浏览器默认路径
+    
+    # 批量下载设置
+    batch_download_concurrency: int = int(os.getenv("BATCH_DOWNLOAD_CONCURRENCY", "2"))  # 并行下载数量
 
 
 settings = Settings()
