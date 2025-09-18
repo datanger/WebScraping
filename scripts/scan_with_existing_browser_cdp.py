@@ -234,27 +234,53 @@ async def update_download_state_with_directory_structure(directory_structure, fi
         print(f"❌ 更新下载状态文件失败: {e}")
 
 
-async def extract_zip_file_background(zip_path: Path, extract_to: Path, max_files: int = 2, file_name: str = "") -> dict:
-    """后台解压zip文件，不占用下载并发名额"""
+async def create_directory_structure_and_extract(zip_path: Path, directory_structure: dict, max_files: int = 2, file_name: str = "") -> dict:
+    """创建原始目录结构并解压zip文件到对应目录"""
     try:
         # 等待一小段时间确保文件完全写入
         await asyncio.sleep(1)
         
         extract_info = {
             "zip_file": str(zip_path),
-            "extract_path": str(extract_to),
+            "extract_path": "",
             "extracted_files": [],
             "total_files_in_zip": 0,
             "extracted_count": 0,
             "success": False,
             "error": None,
-            "file_name": file_name
+            "file_name": file_name,
+            "directory_structure_created": False
         }
         
-        # 创建解压目录
-        extract_to.mkdir(parents=True, exist_ok=True)
+        # 从目录结构信息中获取文件夹路径
+        folder_path = directory_structure.get("folder_path", [])
+        if not folder_path:
+            print(f"   ⚠️ [{file_name}] 无法获取目录结构信息")
+            return extract_info
         
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        # 创建原始目录结构
+        base_path = Path("downloads")
+        original_structure_path = base_path / "original_structure"
+        
+        # 构建完整路径
+        full_folder_path = original_structure_path
+        for folder in folder_path:
+            full_folder_path = full_folder_path / folder
+        
+        # 创建目录结构
+        full_folder_path.mkdir(parents=True, exist_ok=True)
+        extract_info["extract_path"] = str(full_folder_path)
+        extract_info["directory_structure_created"] = True
+        
+        print(f"   📁 [{file_name}] 已创建目录结构: {full_folder_path}")
+        
+        # 将zip文件移动到对应目录
+        target_zip_path = full_folder_path / file_name
+        shutil.move(str(zip_path), str(target_zip_path))
+        print(f"   📦 [{file_name}] 已移动到: {target_zip_path}")
+        
+        # 在目标目录中解压
+        with zipfile.ZipFile(target_zip_path, 'r') as zip_ref:
             # 获取zip文件中的所有文件列表
             file_list = zip_ref.namelist()
             extract_info["total_files_in_zip"] = len(file_list)
@@ -264,8 +290,8 @@ async def extract_zip_file_background(zip_path: Path, extract_to: Path, max_file
             
             for file_name_in_zip in files_to_extract:
                 try:
-                    # 解压单个文件
-                    zip_ref.extract(file_name_in_zip, extract_to)
+                    # 解压单个文件到目标目录
+                    zip_ref.extract(file_name_in_zip, full_folder_path)
                     extract_info["extracted_files"].append(file_name_in_zip)
                     extract_info["extracted_count"] += 1
                     print(f"   📦 [{file_name}] 已解压: {file_name_in_zip}")
@@ -283,16 +309,17 @@ async def extract_zip_file_background(zip_path: Path, extract_to: Path, max_file
         return extract_info
         
     except Exception as e:
-        print(f"   ❌ [{file_name}] 解压zip文件失败: {e}")
+        print(f"   ❌ [{file_name}] 创建目录结构并解压失败: {e}")
         return {
             "zip_file": str(zip_path),
-            "extract_path": str(extract_to),
+            "extract_path": "",
             "extracted_files": [],
             "total_files_in_zip": 0,
             "extracted_count": 0,
             "success": False,
             "error": str(e),
-            "file_name": file_name
+            "file_name": file_name,
+            "directory_structure_created": False
         }
 
 
@@ -373,22 +400,21 @@ async def download_single_file(scanner, page, file_elem, file_index, total_files
                     result["file_size"] = task_status.file_size
                     result["progress"] = 1.0
                     
-                    # 如果是zip文件，启动后台解压任务（不占用下载并发名额）
-                    if file_name.lower().endswith('.zip'):
-                        print(f"   📦 启动后台解压任务: {file_name}")
-                        zip_path = Path("downloads") / file_name
-                        extract_path = Path("downloads") / "extracted" / file_name.replace('.zip', '')
-                        
-                        # 创建后台解压任务，不等待完成
-                        extract_task = asyncio.create_task(
-                            extract_zip_file_background(zip_path, extract_path, max_files=2, file_name=file_name)
-                        )
-                        result["extract_task"] = extract_task
-                    
                     # 获取目录结构信息
                     directory_structure = await get_download_directory_structure(page, file_info)
                     if directory_structure:
                         result["directory_structure"] = directory_structure
+                        
+                        # 如果是zip文件，启动后台解压任务（不占用下载并发名额）
+                        if file_name.lower().endswith('.zip'):
+                            print(f"   📦 启动后台解压任务: {file_name}")
+                            zip_path = Path("downloads") / file_name
+                            
+                            # 创建后台解压任务，不等待完成
+                            extract_task = asyncio.create_task(
+                                create_directory_structure_and_extract(zip_path, directory_structure, max_files=2, file_name=file_name)
+                            )
+                            result["extract_task"] = extract_task
                     
                     if progress_callback:
                         await progress_callback(result)
@@ -789,17 +815,23 @@ def print_batch_download_summary(stats):
         # 显示解压信息
         extracted_count = 0
         extract_task_count = 0
+        directory_created_count = 0
         for file_detail in stats.get('file_details', []):
             if file_detail.get('extract_info') and file_detail['extract_info'].get('success'):
                 extracted_count += 1
                 extract_info = file_detail['extract_info']
                 print(f"     📦 已解压: {extract_info['extracted_count']}/{extract_info['total_files_in_zip']} 个文件")
+                if extract_info.get('directory_structure_created'):
+                    directory_created_count += 1
+                    print(f"     📁 目录结构: {extract_info['extract_path']}")
             elif file_detail.get('extract_task_running'):
                 extract_task_count += 1
                 print(f"     📦 解压中: {file_detail['file_name']}")
         
         if extracted_count > 0:
             print(f"\n📦 解压摘要: {extracted_count} 个zip文件已解压")
+        if directory_created_count > 0:
+            print(f"📁 目录结构: {directory_created_count} 个原始目录结构已创建")
         if extract_task_count > 0:
             print(f"📦 后台解压: {extract_task_count} 个zip文件正在解压中")
     

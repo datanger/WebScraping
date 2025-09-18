@@ -1,9 +1,9 @@
 {
   "report_info": {
-    "timestamp": "2025-09-18T11:29:04.519928",
+    "timestamp": "2025-09-18T13:33:34.506380",
     "report_type": "unified_batch_download_realtime",
     "concurrency": 2,
-    "final_timestamp": "2025-09-18T11:29:04.521664"
+    "final_timestamp": "2025-09-18T13:33:35.511896"
   },
   "summary": {
     "total_files": 3,
@@ -22,13 +22,28 @@
       "file_index": 1,
       "success": true,
       "error": null,
-      "start_time": "2025-09-18T11:28:15.482032",
-      "end_time": "2025-09-18T11:28:46.194972",
+      "start_time": "2025-09-18T13:32:51.655371",
+      "end_time": "2025-09-18T13:33:11.008869",
       "retry_count": 0,
       "status": "completed",
       "progress": 1.0,
       "file_size": 27417387,
-      "speed": 27382955.135884605,
+      "speed": 27342328.16628014,
+      "extract_info": {
+        "zip_file": "downloads/ziptestcopy1.zip",
+        "extract_path": "downloads/original_structure/GEN1.5/データ解析/スクリプト検討/Test/202509/20250901_走行データ送付/360/日本/JP4テスト車/20250827",
+        "extracted_files": [
+          "data_copy(1)/",
+          "data_copy(1)/.gitignore"
+        ],
+        "total_files_in_zip": 207,
+        "extracted_count": 2,
+        "success": true,
+        "error": null,
+        "file_name": "ziptestcopy1.zip",
+        "directory_structure_created": true
+      },
+      "extract_task_running": false,
       "directory_structure": {
         "page_title": "KOTEI-SCAE - 20250827 - 所有文档",
         "page_url": "https://scautoeng.sharepoint.com/sites/KOTEI-SCAE/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FKOTEI%2DSCAE%2FShared%20Documents%2FGEN1%2E5%E4%B8%AD%E5%9B%BDFOT%2F%E3%83%87%E3%83%BC%E3%82%BF%E8%A7%A3%E6%9E%90%2F%E8%AA%8D%E8%AD%98%E7%B3%BB%2F%E8%B5%B0%E8%B7%AF%E8%AA%8D%E8%AD%98%2F%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E6%A4%9C%E8%A8%8E%2FTest%2F202509%2F20250901%5F%E8%B5%B0%E8%A1%8C%E3%83%87%E3%83%BC%E3%82%BF%E9%80%81%E4%BB%98%2F360%2F%E6%97%A5%E6%9C%AC%2FJP4%E3%83%86%E3%82%B9%E3%83%88%E8%BB%8A%2F20250827&viewid=8e19c37a%2Dacdb%2D4c40%2Da22e%2D92e27e7e3366&csf=1&web=1&e=NWcbWt&FolderCTID=0x01200090D0082931AED242A8680C59FF4AF68D",
@@ -61,13 +76,28 @@
       "file_index": 2,
       "success": true,
       "error": null,
-      "start_time": "2025-09-18T11:28:31.088405",
-      "end_time": "2025-09-18T11:28:40.399573",
+      "start_time": "2025-09-18T13:32:57.752415",
+      "end_time": "2025-09-18T13:33:11.036801",
       "retry_count": 0,
       "status": "completed",
       "progress": 1.0,
       "file_size": 4674134,
-      "speed": 4667267.138296503,
+      "speed": 4594747.254537154,
+      "extract_info": {
+        "zip_file": "downloads/ziptest.zip",
+        "extract_path": "downloads/original_structure/GEN1.5/データ解析/スクリプト検討/Test/202509/20250901_走行データ送付/360/日本/JP4テスト車/20250827",
+        "extracted_files": [
+          "202509/20250901_走行データ送付/360/日本/JP4テスト車/20250827/ダウンロード済みのため削除.txt",
+          "202509/20250901_走行データ送付/360/日本/JP4テスト車/OnlineLabeling/ダウンロード済みのため削除.txt"
+        ],
+        "total_files_in_zip": 21,
+        "extracted_count": 2,
+        "success": true,
+        "error": null,
+        "file_name": "ziptest.zip",
+        "directory_structure_created": true
+      },
+      "extract_task_running": false,
       "directory_structure": {
         "page_title": "KOTEI-SCAE - 20250827 - 所有文档",
         "page_url": "https://scautoeng.sharepoint.com/sites/KOTEI-SCAE/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FKOTEI%2DSCAE%2FShared%20Documents%2FGEN1%2E5%E4%B8%AD%E5%9B%BDFOT%2F%E3%83%87%E3%83%BC%E3%82%BF%E8%A7%A3%E6%9E%90%2F%E8%AA%8D%E8%AD%98%E7%B3%BB%2F%E8%B5%B0%E8%B7%AF%E8%AA%8D%E8%AD%98%2F%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E6%A4%9C%E8%A8%8E%2FTest%2F202509%2F20250901%5F%E8%B5%B0%E8%A1%8C%E3%83%87%E3%83%BC%E3%82%BF%E9%80%81%E4%BB%98%2F360%2F%E6%97%A5%E6%9C%AC%2FJP4%E3%83%86%E3%82%B9%E3%83%88%E8%BB%8A%2F20250827&viewid=8e19c37a%2Dacdb%2D4c40%2Da22e%2D92e27e7e3366&csf=1&web=1&e=NWcbWt&FolderCTID=0x01200090D0082931AED242A8680C59FF4AF68D",
@@ -100,13 +130,28 @@
       "file_index": 3,
       "success": true,
       "error": null,
-      "start_time": "2025-09-18T11:28:50.404019",
-      "end_time": "2025-09-18T11:29:04.520860",
+      "start_time": "2025-09-18T13:33:21.011451",
+      "end_time": "2025-09-18T13:33:34.507366",
       "retry_count": 0,
       "status": "completed",
       "progress": 1.0,
       "file_size": 27417387,
-      "speed": 27388452.94205231,
+      "speed": 27384800.53524413,
+      "extract_info": {
+        "zip_file": "downloads/ziptestcopy.zip",
+        "extract_path": "downloads/original_structure/GEN1.5/データ解析/スクリプト検討/Test/202509/20250901_走行データ送付/360/日本/JP4テスト車/20250827",
+        "extracted_files": [
+          "data_copy(1)/",
+          "data_copy(1)/.gitignore"
+        ],
+        "total_files_in_zip": 207,
+        "extracted_count": 2,
+        "success": true,
+        "error": null,
+        "file_name": "ziptestcopy.zip",
+        "directory_structure_created": true
+      },
+      "extract_task_running": false,
       "directory_structure": {
         "page_title": "KOTEI-SCAE - 20250827 - 所有文档",
         "page_url": "https://scautoeng.sharepoint.com/sites/KOTEI-SCAE/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FKOTEI%2DSCAE%2FShared%20Documents%2FGEN1%2E5%E4%B8%AD%E5%9B%BDFOT%2F%E3%83%87%E3%83%BC%E3%82%BF%E8%A7%A3%E6%9E%90%2F%E8%AA%8D%E8%AD%98%E7%B3%BB%2F%E8%B5%B0%E8%B7%AF%E8%AA%8D%E8%AD%98%2F%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E6%A4%9C%E8%A8%8E%2FTest%2F202509%2F20250901%5F%E8%B5%B0%E8%A1%8C%E3%83%87%E3%83%BC%E3%82%BF%E9%80%81%E4%BB%98%2F360%2F%E6%97%A5%E6%9C%AC%2FJP4%E3%83%86%E3%82%B9%E3%83%88%E8%BB%8A%2F20250827&viewid=8e19c37a%2Dacdb%2D4c40%2Da22e%2D92e27e7e3366&csf=1&web=1&e=NWcbWt&FolderCTID=0x01200090D0082931AED242A8680C59FF4AF68D",
