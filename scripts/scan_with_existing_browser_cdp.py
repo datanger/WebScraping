@@ -687,6 +687,80 @@ def get_unique_folder_name(parent_path: Path, folder_name: str) -> str:
         return f"folder_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
 
+def format_path_for_display(path: Path) -> str:
+    """格式化路径用于显示（Windows使用原生反斜杠，避免双反斜杠显示）
+    
+    Args:
+        path: Path对象
+    
+    Returns:
+        格式化后的路径字符串
+    """
+    import platform
+    path_str = str(path)
+    
+    # Windows上，str(Path)会产生双反斜杠的显示效果
+    # 我们使用as_posix()来统一显示为正斜杠，或者使用原始路径
+    if platform.system() == "Windows":
+        # 在Windows上，使用原生路径表示（单反斜杠）
+        # 通过替换双反斜杠为单反斜杠来修复显示问题
+        return path_str.replace('\\\\', '\\')
+    else:
+        return path_str
+
+
+async def wait_for_file_stable_size(file_path: Path, file_name: str, max_wait_seconds: int = 10) -> int:
+    """等待文件大小稳定（解决下载完成瞬间文件变为0KB的问题）
+    
+    Args:
+        file_path: 文件路径
+        file_name: 文件名（用于日志）
+        max_wait_seconds: 最大等待时间（秒）
+    
+    Returns:
+        文件大小（字节），如果文件不存在或超时返回0
+    """
+    if not file_path.exists():
+        return 0
+    
+    print(f"   ⏳ [{file_name}] 等待文件写入完成...")
+    
+    last_size = 0
+    stable_count = 0
+    check_interval = 0.5  # 每500ms检查一次
+    max_checks = int(max_wait_seconds / check_interval)
+    
+    for i in range(max_checks):
+        try:
+            current_size = file_path.stat().st_size
+            
+            # 如果文件大小与上次相同，增加稳定计数
+            if current_size == last_size and current_size > 0:
+                stable_count += 1
+                # 连续3次检查大小不变且大于0，认为文件已稳定
+                if stable_count >= 3:
+                    print(f"   ✅ [{file_name}] 文件大小已稳定: {current_size:,} 字节")
+                    return current_size
+            else:
+                # 大小变化了，重置稳定计数
+                stable_count = 0
+                if current_size > 0 and last_size == 0:
+                    print(f"   📊 [{file_name}] 检测到文件开始写入: {current_size:,} 字节")
+                elif current_size != last_size:
+                    print(f"   📊 [{file_name}] 文件大小变化: {last_size:,} -> {current_size:,} 字节")
+            
+            last_size = current_size
+            await asyncio.sleep(check_interval)
+            
+        except Exception as e:
+            print(f"   ⚠️ [{file_name}] 检查文件大小时出错: {e}")
+            await asyncio.sleep(check_interval)
+    
+    # 超时后返回最后一次检查的大小
+    print(f"   ⚠️ [{file_name}] 等待超时，最后检测到的大小: {last_size:,} 字节")
+    return last_size
+
+
 async def create_directory_structure_and_extract(zip_path: Path, directory_structure: dict, max_files: int = 2, file_name: str = "", extract_semaphore: asyncio.Semaphore | None = None) -> dict:
     """创建原始目录结构并解压zip文件到对应目录（解压全部文件，任务并发默认2）"""
     try:
@@ -1125,15 +1199,18 @@ async def download_single_file(scanner, page, file_elem_or_data, file_index, tot
                             possible_paths.append(Path("downloads") / file_name)
                             
                             for path in possible_paths:
-                                if path.exists() and path.stat().st_size > 0:
-                                    actual_zip_path = path
-                                    actual_file_name = path.name  # 使用实际文件名
-                                    print(f"   📁 在 {path} 找到zip文件")
-                                    break
+                                if path.exists():
+                                    # 等待文件大小稳定
+                                    file_size = await wait_for_file_stable_size(path, file_name)
+                                    if file_size > 0:
+                                        actual_zip_path = path
+                                        actual_file_name = path.name  # 使用实际文件名
+                                        print(f"   📁 在 {path} 找到zip文件 (大小: {file_size:,} 字节)")
+                                        break
                             
                             if not actual_zip_path:
                                 print(f"   ⚠️ 无法找到有效的zip文件: {file_name}")
-                                print(f"   🔍 已检查的路径: {[str(p) for p in possible_paths]}")
+                                print(f"   🔍 已检查的路径: {[format_path_for_display(p) for p in possible_paths]}")
                                 # 无法找到zip文件，继续处理其他逻辑
                         
                         print(f"   📁 找到zip文件位置: {actual_zip_path}")
@@ -1572,7 +1649,7 @@ class DownloadQueueManager:
                                         
                                         if not download_verified:
                                             print(f"   ❌ 文件验证失败: {result['file_name']} (文件不存在或大小为0)")
-                                            print(f"   🔍 已检查的路径: {[str(p) for p in possible_paths]}")
+                                            print(f"   🔍 已检查的路径: {[format_path_for_display(p) for p in possible_paths]}")
                                     else:
                                         print(f"   ❌ 下载状态验证失败: {result['file_name']} (状态: {task_status.status.value if task_status else 'None'})")
                                     
@@ -1639,7 +1716,7 @@ class DownloadQueueManager:
                                     
                                     if not download_verified:
                                         print(f"   ❌ 文件验证失败: {result['file_name']} (文件不存在或大小为0)")
-                                        print(f"   🔍 已检查的路径: {[str(p) for p in possible_paths]}")
+                                        print(f"   🔍 已检查的路径: {[format_path_for_display(p) for p in possible_paths]}")
                                 else:
                                     print(f"   ❌ 下载状态验证失败: {result['file_name']} (状态: {task_status.status.value if task_status else 'None'})")
                                 
@@ -3613,12 +3690,46 @@ async def batch_download_zip_files():
             traceback.print_exc()
 
 
-async def recursive_find_zip_files(page, max_depth=5, current_depth=0, current_path="", visited_paths: set | None = None, zip_collector: list | None = None, target_url: str = None):
+async def restart_scan_from_beginning(page, target_url: str, max_depth: int, visited_paths: set, zip_collector: list, retry_count: int):
+    """从初始路径重新开始扫描"""
+    print(f"🔄 重新从初始路径开始扫描 (重试次数: {retry_count})")
+    
+    try:
+        # 导航到初始URL
+        print(f"  🔗 导航到初始URL: {target_url}")
+        await page.goto(target_url, wait_until="domcontentloaded", timeout=15000)
+        await page.wait_for_timeout(2000)  # 等待页面完全加载
+        
+        # 清空已访问路径（保留zip_collector中的结果）
+        visited_paths.clear()
+        
+        # 重新开始扫描
+        print(f"  🔄 重新开始扫描...")
+        return await recursive_find_zip_files(page, max_depth, 0, "", visited_paths, zip_collector, target_url, retry_count)
+        
+    except Exception as e:
+        print(f"  ❌ 重新开始扫描失败: {e}")
+        if retry_count < 3:
+            print(f"  🔄 尝试再次重新开始扫描...")
+            await asyncio.sleep(2)  # 等待2秒后重试
+            return await restart_scan_from_beginning(page, target_url, max_depth, visited_paths, zip_collector, retry_count + 1)
+        else:
+            print(f"  ❌ 达到最大重试次数，停止扫描")
+            return []
+
+
+async def recursive_find_zip_files(page, max_depth=5, current_depth=0, current_path="", visited_paths: set | None = None, zip_collector: list | None = None, target_url: str = None, retry_count: int = 0):
     """递归查找所有层级的zip文件 - 严格遵循安全操作指南（更稳健的点击与去重）"""
     if visited_paths is None:
         visited_paths = set()
     if current_depth >= max_depth:
         print(f"  ⚠️ 达到最大深度 {max_depth}，停止递归")
+        return []
+    
+    # 最大重试次数限制
+    MAX_RETRIES = 3
+    if retry_count >= MAX_RETRIES:
+        print(f"  ❌ 达到最大重试次数 {MAX_RETRIES}，停止扫描")
         return []
     
     # 如果没有提供target_url，从当前页面URL获取
@@ -3869,8 +3980,8 @@ async def recursive_find_zip_files(page, max_depth=5, current_depth=0, current_p
                             print(f"  ✅ 页面恢复成功，继续重试")
                             continue
                         else:
-                            print(f"  ❌ 页面恢复失败，跳过此文件夹")
-                            break
+                            print(f"  ❌ 页面恢复失败，重新从初始路径开始扫描...")
+                            return await restart_scan_from_beginning(page, target_url, max_depth, visited_paths, zip_collector, retry_count + 1)
                     else:
                         # 其他异常，等待后重试
                         await page.wait_for_timeout(2000)
@@ -3891,8 +4002,8 @@ async def recursive_find_zip_files(page, max_depth=5, current_depth=0, current_p
                         print(f"   🔄 页面失去响应，尝试恢复...")
                         recovery_success = await recover_from_page_timeout(page, target_url)
                         if not recovery_success:
-                            print(f"   ❌ 页面恢复失败，跳过此文件夹")
-                            continue
+                            print(f"   ❌ 页面恢复失败，重新从初始路径开始扫描...")
+                            return await restart_scan_from_beginning(page, target_url, max_depth, visited_paths, zip_collector, retry_count + 1)
                     else:
                         # 即使页面未完全就绪，也等待一段时间让页面稳定
                         await page.wait_for_timeout(2000)
@@ -3927,18 +4038,8 @@ async def recursive_find_zip_files(page, max_depth=5, current_depth=0, current_p
                             await page.wait_for_timeout(1000)
                         except Exception as e:
                             print(f"  ❌ 返回上级目录失败: {e}")
-                            # 检查是否是超时问题
-                            if "timeout" in str(e).lower() or "exceeded" in str(e).lower():
-                                print(f"  🔄 检测到超时异常，尝试恢复页面...")
-                                await recover_from_page_timeout(page, target_url)
-                            else:
-                                # 尝试直接导航到目标URL
-                                try:
-                                    await page.goto(target_url, wait_until="domcontentloaded", timeout=10000)
-                                    await page.wait_for_timeout(1000)
-                                    print(f"  ✅ 已通过直接导航返回上级目录")
-                                except Exception:
-                                    pass
+                            print(f"  🔄 重新从初始路径开始扫描...")
+                            return await restart_scan_from_beginning(page, target_url, max_depth, visited_paths, zip_collector, retry_count + 1)
                     else:
                         print(f"  ⚠️ 进入文件夹失败，页面标题: {current_title}")
                         # 若失败尽量回退一次，避免卡住
@@ -3956,14 +4057,16 @@ async def recursive_find_zip_files(page, max_depth=5, current_depth=0, current_p
                         print(f"  🔄 检测到超时异常，尝试恢复页面...")
                         recovery_success = await recover_from_page_timeout(page, target_url)
                         if not recovery_success:
-                            print(f"  ❌ 页面恢复失败，跳过此文件夹")
+                            print(f"  ❌ 页面恢复失败，重新从初始路径开始扫描...")
+                            return await restart_scan_from_beginning(page, target_url, max_depth, visited_paths, zip_collector, retry_count + 1)
                     else:
                         # 尝试返回上级目录
                         try:
                             await page.go_back()
                             await page.wait_for_timeout(500)
                         except Exception:
-                            pass
+                            print(f"  🔄 返回上级失败，重新从初始路径开始扫描...")
+                            return await restart_scan_from_beginning(page, target_url, max_depth, visited_paths, zip_collector, retry_count + 1)
                     continue
                     
             except Exception as e:
@@ -3973,32 +4076,22 @@ async def recursive_find_zip_files(page, max_depth=5, current_depth=0, current_p
                     print(f"  🔄 检测到超时异常，尝试恢复页面...")
                     recovery_success = await recover_from_page_timeout(page, target_url)
                     if not recovery_success:
-                        print(f"  ❌ 页面恢复失败，跳过此文件夹")
+                        print(f"  ❌ 页面恢复失败，重新从初始路径开始扫描...")
+                        return await restart_scan_from_beginning(page, target_url, max_depth, visited_paths, zip_collector, retry_count + 1)
                 else:
                     # 尝试返回上级目录
                     try:
                         await page.go_back()
                         await page.wait_for_timeout(500)
                     except Exception:
-                        pass
+                        print(f"  🔄 返回上级失败，重新从初始路径开始扫描...")
+                        return await restart_scan_from_beginning(page, target_url, max_depth, visited_paths, zip_collector, retry_count + 1)
                 continue
                 
         except Exception as e:
             print(f"  ⚠️ 进入文件夹 {folder['text']} 失败: {e}")
-            # 检查是否是超时问题
-            if "timeout" in str(e).lower() or "exceeded" in str(e).lower():
-                print(f"  🔄 检测到超时异常，尝试恢复页面...")
-                recovery_success = await recover_from_page_timeout(page, target_url)
-                if not recovery_success:
-                    print(f"  ❌ 页面恢复失败，跳过此文件夹")
-            else:
-                # 尝试返回上级目录
-                try:
-                    await page.go_back()
-                    await page.wait_for_timeout(500)
-                except:
-                    pass
-            continue
+            print(f"  🔄 重新从初始路径开始扫描...")
+            return await restart_scan_from_beginning(page, target_url, max_depth, visited_paths, zip_collector, retry_count + 1)
     
     return all_zip_files
 
