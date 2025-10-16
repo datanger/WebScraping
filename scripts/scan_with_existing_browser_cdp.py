@@ -680,84 +680,44 @@ async def create_directory_structure_and_extract(zip_path: Path, directory_struc
             "directory_structure_created": False
         }
         
-        # 从目录结构信息中获取文件夹路径
-        folder_path = directory_structure.get("folder_path", [])
-        if not folder_path:
-            print(f"   ⚠️ [{file_name}] 无法获取目录结构信息")
-            return extract_info
-        
-        # 解析实际目录结构，以Test作为根目录
-        # 从URL中提取从Test开始的完整路径
-        page_url = directory_structure.get("page_url", "")
-        actual_path_from_test = []
-        
-        if page_url:
-            try:
-                import urllib.parse
-                import re
-                
-                # 解码URL
-                decoded_url = urllib.parse.unquote(page_url)
-                
-                # 查找Test之后的路径
-                test_pattern = r'/Test/(.+)'
-                test_match = re.search(test_pattern, decoded_url)
-                
-                if test_match:
-                    # 获取Test之后的路径部分
-                    path_after_test = test_match.group(1)
-                    # 按/分割并解码每个组件，过滤掉URL参数
-                    path_components = []
-                    for comp in path_after_test.split('/'):
-                        if comp:
-                            # 解码组件
-                            decoded_comp = urllib.parse.unquote(comp)
-                            # 过滤掉包含URL参数的部分（包含&、?、=等字符）
-                            if not any(char in decoded_comp for char in ['&', '?', '=', 'viewid', 'csf', 'web', 'e', 'FolderCTID']):
-                                path_components.append(decoded_comp)
-                            else:
-                                # 如果包含URL参数，只取参数前的部分
-                                clean_comp = decoded_comp.split('&')[0].split('?')[0].split('=')[0]
-                                if clean_comp and not any(char in clean_comp for char in ['&', '?', '=']):
-                                    path_components.append(clean_comp)
-                    actual_path_from_test = path_components
-                    print(f"   📁 [{file_name}] 从URL解析的实际路径: Test/{'/'.join(actual_path_from_test)}")
-                else:
-                    # 如果没找到Test，使用folder_path作为后备
-                    actual_path_from_test = folder_path
-                    print(f"   📁 [{file_name}] 使用后备路径: {'/'.join(actual_path_from_test)}")
-            except Exception as e:
-                print(f"   ⚠️ [{file_name}] URL解析失败: {e}")
-                actual_path_from_test = folder_path
-        else:
-            actual_path_from_test = folder_path
-        
-        # 创建原始目录结构，以Test作为根目录
-        base_path = Path("downloads")
-        original_structure_path = base_path / "original_structure" / "Test"
-        
-        # 构建完整路径（保持原始目录结构，不处理重复）
-        full_folder_path = original_structure_path
-        
-        # 过滤掉空值和None值
-        valid_folders = [folder for folder in actual_path_from_test if folder and folder.strip()]
-        
-        if not valid_folders:
-            print(f"   ⚠️ [{file_name}] 没有有效的文件夹路径，使用默认路径")
+        # 检查directory_structure是否为None
+        if directory_structure is None:
+            print(f"   ⚠️ [{file_name}] 目录结构信息为None，使用默认路径")
+            # 使用默认路径
+            base_path = Path("downloads")
+            original_structure_path = base_path / "original_structure" / "Test"
             full_folder_path = original_structure_path / file_name.replace('.zip', '')
+            full_folder_path.mkdir(parents=True, exist_ok=True)
+            extract_info["extract_path"] = str(full_folder_path)
+            extract_info["directory_structure_created"] = True
+            print(f"   📁 [{file_name}] 已创建默认目录结构: {full_folder_path}")
         else:
-            for folder in valid_folders:
-                full_folder_path = full_folder_path / folder
+            # 从目录结构信息中获取文件夹路径
+            folder_path = directory_structure.get("folder_path", [])
+            if not folder_path:
+                print(f"   ⚠️ [{file_name}] 无法获取目录结构信息，使用默认路径")
+                # 使用默认路径
+                base_path = Path("downloads")
+                original_structure_path = base_path / "original_structure" / "Test"
+                full_folder_path = original_structure_path / file_name.replace('.zip', '')
+                full_folder_path.mkdir(parents=True, exist_ok=True)
+                extract_info["extract_path"] = str(full_folder_path)
+                extract_info["directory_structure_created"] = True
+                print(f"   📁 [{file_name}] 已创建默认目录结构: {full_folder_path}")
+            else:
+                # 继续原有的目录结构创建逻辑
+                await _create_directory_structure_from_info(extract_info, directory_structure, file_name)
+                full_folder_path = Path(extract_info["extract_path"])
         
-        print(f"   📁 [{file_name}] 创建目录结构: Test/{'/'.join(valid_folders) if valid_folders else file_name.replace('.zip', '')}")
-        print(f"   📁 [{file_name}] 实际解压路径: {full_folder_path}")
-        
-        # 创建目录结构
-        full_folder_path.mkdir(parents=True, exist_ok=True)
-        extract_info["extract_path"] = str(full_folder_path)
-        extract_info["directory_structure_created"] = True
-        
-        print(f"   📁 [{file_name}] 已创建目录结构: {full_folder_path}")
+        # 如果extract_info中没有extract_path，说明上面的逻辑有问题，使用默认路径
+        if not extract_info.get("extract_path"):
+            base_path = Path("downloads")
+            original_structure_path = base_path / "original_structure" / "Test"
+            full_folder_path = original_structure_path / file_name.replace('.zip', '')
+            full_folder_path.mkdir(parents=True, exist_ok=True)
+            extract_info["extract_path"] = str(full_folder_path)
+            extract_info["directory_structure_created"] = True
+            print(f"   📁 [{file_name}] 已创建默认目录结构: {full_folder_path}")
         
         # 验证zip文件完整性
         if not zip_path.exists():
@@ -833,6 +793,97 @@ async def create_directory_structure_and_extract(zip_path: Path, directory_struc
             "file_name": file_name,
             "directory_structure_created": False
         }
+
+
+async def _create_directory_structure_from_info(extract_info: dict, directory_structure: dict, file_name: str):
+    """从目录结构信息创建目录结构"""
+    try:
+        # 从目录结构信息中获取文件夹路径
+        folder_path = directory_structure.get("folder_path", [])
+        
+        # 解析实际目录结构，以Test作为根目录
+        # 从URL中提取从Test开始的完整路径
+        page_url = directory_structure.get("page_url", "")
+        actual_path_from_test = []
+        
+        if page_url:
+            try:
+                import urllib.parse
+                import re
+                
+                # 解码URL
+                decoded_url = urllib.parse.unquote(page_url)
+                
+                # 查找Test之后的路径
+                test_pattern = r'/Test/(.+)'
+                test_match = re.search(test_pattern, decoded_url)
+                
+                if test_match:
+                    # 获取Test之后的路径部分
+                    path_after_test = test_match.group(1)
+                    # 按/分割并解码每个组件，过滤掉URL参数
+                    path_components = []
+                    for comp in path_after_test.split('/'):
+                        if comp:
+                            # 解码组件
+                            decoded_comp = urllib.parse.unquote(comp)
+                            # 过滤掉包含URL参数的部分（包含&、?、=等字符）
+                            if not any(char in decoded_comp for char in ['&', '?', '=', 'viewid', 'csf', 'web', 'e', 'FolderCTID']):
+                                path_components.append(decoded_comp)
+                            else:
+                                # 如果包含URL参数，只取参数前的部分
+                                clean_comp = decoded_comp.split('&')[0].split('?')[0].split('=')[0]
+                                if clean_comp and not any(char in clean_comp for char in ['&', '?', '=']):
+                                    path_components.append(clean_comp)
+                    actual_path_from_test = path_components
+                    print(f"   📁 [{file_name}] 从URL解析的实际路径: Test/{'/'.join(actual_path_from_test)}")
+                else:
+                    # 如果没找到Test，使用folder_path作为后备
+                    actual_path_from_test = folder_path
+                    print(f"   📁 [{file_name}] 使用后备路径: {'/'.join(actual_path_from_test)}")
+            except Exception as e:
+                print(f"   ⚠️ [{file_name}] URL解析失败: {e}")
+                actual_path_from_test = folder_path
+        else:
+            actual_path_from_test = folder_path
+        
+        # 创建原始目录结构，以Test作为根目录
+        base_path = Path("downloads")
+        original_structure_path = base_path / "original_structure" / "Test"
+        
+        # 构建完整路径（保持原始目录结构，不处理重复）
+        full_folder_path = original_structure_path
+        
+        # 过滤掉空值和None值
+        valid_folders = [folder for folder in actual_path_from_test if folder and folder.strip()]
+        
+        if not valid_folders:
+            print(f"   ⚠️ [{file_name}] 没有有效的文件夹路径，使用默认路径")
+            full_folder_path = original_structure_path / file_name.replace('.zip', '')
+        else:
+            for folder in valid_folders:
+                full_folder_path = full_folder_path / folder
+        
+        print(f"   📁 [{file_name}] 创建目录结构: Test/{'/'.join(valid_folders) if valid_folders else file_name.replace('.zip', '')}")
+        print(f"   📁 [{file_name}] 实际解压路径: {full_folder_path}")
+        
+        # 创建目录结构
+        full_folder_path.mkdir(parents=True, exist_ok=True)
+        extract_info["extract_path"] = str(full_folder_path)
+        extract_info["directory_structure_created"] = True
+        
+        print(f"   📁 [{file_name}] 已创建目录结构: {full_folder_path}")
+        
+    except Exception as e:
+        print(f"   ❌ [{file_name}] 创建目录结构失败: {e}")
+        # 使用默认路径作为后备
+        base_path = Path("downloads")
+        original_structure_path = base_path / "original_structure" / "Test"
+        full_folder_path = original_structure_path / file_name.replace('.zip', '')
+        full_folder_path.mkdir(parents=True, exist_ok=True)
+        extract_info["extract_path"] = str(full_folder_path)
+        extract_info["directory_structure_created"] = True
+        print(f"   📁 [{file_name}] 已创建默认目录结构: {full_folder_path}")
 
 
 async def download_single_file(scanner, page, file_elem_or_data, file_index, total_files, progress_callback=None, click_lock: asyncio.Lock | None = None):
