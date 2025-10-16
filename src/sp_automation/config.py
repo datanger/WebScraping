@@ -15,7 +15,7 @@ class Settings:
     # 登录/目标
     login_email: str = os.getenv("SP_LOGIN_EMAIL", "")
     login_password: str = os.getenv("SP_LOGIN_PASSWORD", "")  # 如需脚本输入密码
-    target_url: str = os.getenv("SP_TARGET_URL", "https://contoso.sharepoint.com/sites/MySite")
+    target_url: str = os.getenv("SP_TARGET_URL", "https://scautoeng.sharepoint.com/sites/KOTEI-SCAE/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FKOTEI%2DSCAE%2FShared%20Documents%2FGEN1%2E5%E4%B8%AD%E5%9B%BDFOT%2F%E3%83%87%E3%83%BC%E3%82%BF%E8%A7%A3%E6%9E%90%2F%E8%AA%8D%E8%AD%98%E7%B3%BB%2F%E8%B5%B0%E8%B7%AF%E8%AA%8D%E8%AD%98%2F%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E6%A4%9C%E8%A8%8E%2FTest&viewid=8e19c37a%2Dacdb%2D4c40%2Da22e%2D92e27e7e3366&csf=1&web=1&e=NWcbWt&FolderCTID=0x01200090D0082931AED242A8680C59FF4AF68D")
 
     # 存储会话
     storage_state_file: str = os.getenv("SP_STORAGE_STATE", "storage/storage_state.json")

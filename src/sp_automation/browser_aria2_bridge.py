@@ -408,22 +408,9 @@ class BrowserToAria2Bridge:
                     )
                     return
 
-                # 控制台单行进度
-                try:
-                    import sys as _sys
-                    mb = current_size / (1024 * 1024)
-                    mbps = speed / (1024 * 1024)
-                    total = self._task_total_bytes.get(task_id)
-                    if total and total > 0:
-                        pct = current_size / total * 100.0
-                        tot_mb = total / (1024 * 1024)
-                        line = f"\r📥 {mb:.2f}MB / {tot_mb:.2f}MB  {pct:5.1f}%  {mbps:.2f} MB/s"
-                    else:
-                        line = f"\r📥 {mb:.2f}MB  ??.%  {mbps:.2f} MB/s"
-                    _sys.stdout.write(line)
-                    _sys.stdout.flush()
-                except Exception:
-                    pass
+                # 移除实时速度显示，只在完成时显示结果
+                # 注释掉实时显示代码，避免刷屏
+                pass
 
                 # 进程退出且文件稳定若干次，视为完成/失败
                 if ret is not None:

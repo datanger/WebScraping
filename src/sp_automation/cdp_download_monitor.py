@@ -83,20 +83,9 @@ class BrowserDownloadMonitor:
                     progress=progress,
                     suppress_log=True,
                 )
-                # 单行刷新输出，显示速度/百分比（避免冗余刷屏）
-                try:
-                    import sys as _sys
-                    mb = recv / (1024 * 1024)
-                    if total:
-                        tot = total / (1024 * 1024)
-                        pct = progress * 100
-                        line = f"\r📥 {mb:.2f}MB / {tot:.2f}MB  {pct:5.1f}%  {speed/1024/1024:.2f} MB/s"
-                    else:
-                        line = f"\r📥 {mb:.2f}MB  ??.%  {speed/1024/1024:.2f} MB/s"
-                    _sys.stdout.write(line)
-                    _sys.stdout.flush()
-                except Exception:
-                    pass
+                # 移除实时速度显示，只在完成时显示结果
+                # 注释掉实时显示代码，避免刷屏
+                pass
             elif state == "completed":
                 self.status_manager.update_status(
                     task_id,

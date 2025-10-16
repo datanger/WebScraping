@@ -25,7 +25,7 @@ class SharePointRecursiveScanner:
         """
         self.scanner = scanner
     
-    async def recursive_scan_folders(self, page: Page, current_url: str, current_path: str = "", depth: int = 0):
+    async def recursive_scan_folders(self, page: Page, current_url: str, current_path: str = "", depth: int = 0, zip_found_callback: Optional[Any] = None):
         """递归扫描文件夹"""
         print(f"\n📁 扫描: {current_path or '根目录'}")
         
@@ -184,6 +184,28 @@ class SharePointRecursiveScanner:
                 }
                 current_page_files.append(file_info)
                 self.scanner.scan_results["files"].append(file_info)
+
+        # 在进入/扫描当前层后，若提供回调，则把当前层的 .zip 直接回调打印/保存
+        if callable(zip_found_callback):
+            try:
+                page_url = page.url
+            except Exception:
+                page_url = current_url
+            for f in current_page_files:
+                name = f.get("name") or ""
+                if isinstance(name, str) and name.lower().endswith('.zip'):
+                    info = {
+                        "text": name,
+                        "path": current_path,
+                        "href": f.get("href") or "",
+                        "page_url": page_url,
+                        "position": f.get("position") or {}
+                    }
+                    try:
+                        await zip_found_callback(info)
+                    except TypeError:
+                        # 兼容同步回调
+                        zip_found_callback(info)
         
         # 实时更新并显示完整的文件架构
         self._display_current_file_tree()
@@ -205,11 +227,11 @@ class SharePointRecursiveScanner:
             if await self._click_folder_and_scan(page, folder, folder_path, depth):
                 # 成功进入文件夹，递归扫描
                 new_url = page.url
-                await self.recursive_scan_folders(page, new_url, folder_path, depth + 1)
+                await self.recursive_scan_folders(page, new_url, folder_path, depth + 1, zip_found_callback=zip_found_callback)
                 
                 # 返回上级目录
                 await self._navigate_back(page, current_url)
-                await page.wait_for_timeout(2000)
+                await page.wait_for_timeout(1200)  # 优化：从2000ms缩减为1200ms (3/5)
             else:
                 print(f"   ❌ 无法进入文件夹: {folder_name}")
     

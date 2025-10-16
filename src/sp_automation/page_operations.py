@@ -57,11 +57,11 @@ async def scroll_to_load_all_content(page: Page):
     """滚动页面确保所有内容加载"""
     # 滚动到页面底部
     await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-    await page.wait_for_timeout(2000)
+    await page.wait_for_timeout(1200)  # 优化：从2000ms缩减为1200ms (3/5)
     
     # 滚动回顶部
     await page.evaluate("window.scrollTo(0, 0)")
-    await page.wait_for_timeout(2000)
+    await page.wait_for_timeout(1200)  # 优化：从2000ms缩减为1200ms (3/5)
 
 
 async def find_element_by_text(page: Page, text: str, selectors: List[str] = None) -> Optional[Any]:
@@ -94,7 +94,7 @@ async def click_element_with_confirmation(page: Page, element: Any, element_name
         
         # 悬停到元素上
         await element.hover()
-        await page.wait_for_timeout(1000)
+        await page.wait_for_timeout(600)  # 优化：从1000ms缩减为600ms (3/5)
         
         # 等待用户确认
         user_input = input(f"   ❓ 是否点击 '{element_name}'? (y/n/s): ").strip().lower()
@@ -113,7 +113,7 @@ async def click_element_with_confirmation(page: Page, element: Any, element_name
     print(f"   🖱️ 点击: {element_name}")
     await element.click()
     await page.wait_for_load_state("networkidle")
-    await page.wait_for_timeout(3000)
+    await page.wait_for_timeout(1800)  # 优化：从3000ms缩减为1800ms (3/5)
     
     return True
 
@@ -143,7 +143,7 @@ async def check_login_required(page: Page) -> bool:
         
         # 重新获取页面信息
         await page.wait_for_load_state("networkidle")
-        await page.wait_for_timeout(2000)
+        await page.wait_for_timeout(1200)  # 优化：从2000ms缩减为1200ms (3/5)
         
         return True
     

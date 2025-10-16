@@ -1,0 +1,31 @@
+🚀 数据拷贝工具 - Windows使用说明
+
+📋 系统要求
+- Windows 7/8/10/11 (64位)
+- 无需安装Python
+- 无需安装任何依赖包
+
+🎯 使用方法
+1. 双击 DataCopyTool.exe 直接运行
+2. 或双击 启动数据拷贝工具.bat 启动
+
+🔧 功能特性
+✅ 自动识别所有外接驱动器
+✅ 支持BitLocker加密驱动器解锁
+✅ 智能分类Qdrive、Vector等数据盘
+✅ 自动处理同名文件
+✅ 支持A/B盘选择
+✅ 完整的拷贝进度显示
+
+⚠️ 注意事项
+1. 首次运行可能需要Windows Defender允许
+2. 确保有足够的磁盘空间
+3. 建议以管理员身份运行（处理BitLocker时）
+
+📁 文件说明
+- DataCopyTool.exe - 主程序文件
+- 启动数据拷贝工具.bat - Windows启动脚本
+- config.ini - 配置文件
+- README.md - 详细说明文档
+
+🚀 现在就可以使用了！

@@ -103,31 +103,32 @@ class SharePointFileDownloader:
                 original_name = file_info['name']
                 save_path = downloads_dir / original_name
             
-            # 保存文件
-            await download.save_as(save_path)
-            
-            # 检查文件是否成功保存
-            if save_path.exists():
-                file_size = save_path.stat().st_size
-                if file_size > 0:
-                    print(f"   ✅ 下载成功: {suggested_name or file_info['name']} ({file_size} 字节)")
-                    print(f"   📁 保存位置: {save_path}")
-                    
-                    # 记录下载历史
-                    self.download_history.append({
-                        "file_name": file_info['name'],
-                        "save_path": str(save_path),
-                        "download_time": datetime.now().isoformat(),
-                        "success": True,
-                        "method": "browser_default_with_interception"
-                    })
-                    
-                    return True
-                else:
-                    print("   ⚠️ 文件大小为0，下载失败")
-                    return False
+            # 保存文件：优先从浏览器临时文件复制，避免落盘延迟
+            tmp_path = await download.path()
+            if tmp_path:
+                try:
+                    import shutil
+                    shutil.copyfile(tmp_path, save_path)
+                except Exception:
+                    await download.save_as(save_path)
             else:
-                print("   ❌ 文件保存失败")
+                await download.save_as(save_path)
+
+            # 仅依据浏览器下载器状态判定
+            failure_reason = await download.failure()
+            if failure_reason is None:
+                print(f"   ✅ 下载成功: {suggested_name or file_info['name']}")
+                print(f"   📁 保存位置: {save_path}")
+                self.download_history.append({
+                    "file_name": file_info['name'],
+                    "save_path": str(save_path),
+                    "download_time": datetime.now().isoformat(),
+                    "success": True,
+                    "method": "browser_default_with_interception"
+                })
+                return True
+            else:
+                print(f"   ❌ 浏览器下载失败: {failure_reason}")
                 return False
             
         except Exception as e:
@@ -211,30 +212,30 @@ class SharePointFileDownloader:
                 original_name = file_info['name']
                 save_path = downloads_dir / original_name
             
-            # 保存文件
-            await download.save_as(save_path)
-            
-            # 检查文件大小
-            if save_path.exists():
-                file_size = save_path.stat().st_size
-                if file_size > 0:
-                    print(f"   ✅ 下载成功: {suggested_name or file_info['name']} ({file_size} 字节)")
-                    
-                    # 记录下载历史
-                    self.download_history.append({
-                        "file_name": file_info['name'],
-                        "save_path": str(save_path),
-                        "file_size": file_size,
-                        "download_time": datetime.now().isoformat(),
-                        "success": True
-                    })
-                    
-                    return True
-                else:
-                    print("   ⚠️ 文件大小为0，下载失败")
-                    return False
+            # 保存文件：优先从浏览器临时文件复制，避免落盘延迟
+            tmp_path = await download.path()
+            if tmp_path:
+                try:
+                    import shutil
+                    shutil.copyfile(tmp_path, save_path)
+                except Exception:
+                    await download.save_as(save_path)
             else:
-                print("   ❌ 文件保存失败")
+                await download.save_as(save_path)
+
+            # 仅依据浏览器下载器状态判定
+            failure_reason = await download.failure()
+            if failure_reason is None:
+                print(f"   ✅ 下载成功: {suggested_name or file_info['name']}")
+                self.download_history.append({
+                    "file_name": file_info['name'],
+                    "save_path": str(save_path),
+                    "download_time": datetime.now().isoformat(),
+                    "success": True
+                })
+                return True
+            else:
+                print(f"   ❌ 浏览器下载失败: {failure_reason}")
                 return False
             
         except Exception as e:
@@ -251,24 +252,71 @@ class SharePointFileDownloader:
             return False
     
     async def _find_file_element(self, page: Page, file_info: Dict[str, Any]):
-        """查找文件元素"""
-        # 尝试多种选择器找到文件
+        """查找文件元素 - 改进版本，更精确的定位，避免并发冲突"""
+        file_name = file_info["name"]
+        
+        # 首先尝试精确匹配，避免点击错误的元素
         selectors = [
-            f'text="{file_info["name"]}"',
-            f'[title="{file_info["name"]}"]',
-            f'a:has-text("{file_info["name"]}")',
-            '.heroTextWithHeroCommandsWrapped2_c5aceefe:has-text("{file_info["name"]}")',
-            '.field-LinkFilename-htmlGrid_1:has-text("{file_info["name"]}")'
+            # 精确文本匹配，确保完全匹配
+            f'text="{file_name}"',
+            f'[title="{file_name}"]',
+            # 在文件行中查找，确保在正确的行中
+            f'.row_e4dc14da:not(.headerRow_e4dc14da) .heroTextWithHeroCommandsWrapped2_c5aceefe:has-text("{file_name}")',
+            f'.row_e4dc14da:not(.headerRow_e4dc14da) .field-LinkFilename-htmlGrid_1:has-text("{file_name}")',
+            # 在数据行中查找
+            f'[role="row"]:not(.headerRow_e4dc14da) .heroTextWithHeroCommandsWrapped2_c5aceefe:has-text("{file_name}")',
+            f'[role="row"]:not(.headerRow_e4dc14da) .field-LinkFilename-htmlGrid_1:has-text("{file_name}")',
+            # 备用选择器
+            f'a:has-text("{file_name}")',
+            f'.heroTextWithHeroCommandsWrapped2_c5aceefe:has-text("{file_name}")',
+            f'.field-LinkFilename-htmlGrid_1:has-text("{file_name}")'
         ]
         
         for selector in selectors:
             try:
-                file_element = page.locator(selector).first
-                if await file_element.count() > 0:
-                    return file_element
-            except Exception:
+                # 获取所有匹配的元素
+                elements = page.locator(selector)
+                element_count = await elements.count()
+                
+                if element_count > 0:
+                    # 遍历所有匹配的元素，找到最合适的
+                    for i in range(element_count):
+                        file_element = elements.nth(i)
+                        
+                        # 验证元素是否可见且可点击
+                        if await file_element.is_visible():
+                            # 额外验证：确保这是正确的文件元素
+                            element_text = await file_element.inner_text()
+                            
+                            # 精确匹配文件名，避免部分匹配
+                            if element_text.strip() == file_name:
+                                # 额外验证：确保元素在正确的行中
+                                try:
+                                    # 检查父元素是否是文件行
+                                    parent_row = file_element.locator('xpath=ancestor::*[contains(@class, "row_e4dc14da") or @role="row"]')
+                                    if await parent_row.count() > 0:
+                                        # 确保不是表头行
+                                        parent_class = await parent_row.get_attribute('class')
+                                        if parent_class and 'headerRow_e4dc14da' not in parent_class:
+                                            print(f"   ✅ 找到文件元素: {file_name} (选择器: {selector}, 索引: {i})")
+                                            return file_element
+                                except Exception:
+                                    # 如果父元素检查失败，仍然使用该元素
+                                    print(f"   ✅ 找到文件元素: {file_name} (选择器: {selector}, 索引: {i})")
+                                    return file_element
+                            elif file_name in element_text:
+                                # 部分匹配的情况，记录但不使用
+                                print(f"   ⚠️ 部分匹配: {file_name} in '{element_text}' (选择器: {selector}, 索引: {i})")
+                                continue
+                
+                if element_count > 0:
+                    print(f"   ⚠️ 选择器匹配到 {element_count} 个元素，但都不完全匹配: {selector}")
+                    
+            except Exception as e:
+                print(f"   ⚠️ 选择器失败: {selector} - {e}")
                 continue
         
+        print(f"   ❌ 未找到文件元素: {file_name}")
         return None
     
     async def _find_download_option_in_menu(self, page: Page):

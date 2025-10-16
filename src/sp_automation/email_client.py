@@ -5,6 +5,7 @@ import time
 from email.header import decode_header
 
 class EmailClient:
+	
 	def __init__(self):
 		# 邮箱服务器信息 - 根据您的配置图片设置
 		self.pop_host = 'popw.263.net'  # POP3收件服务器地址
@@ -12,7 +13,7 @@ class EmailClient:
 		self.smtp_host = 'smtpw.263.net'  # SMTP发件服务器地址
 		self.smtp_port = 465  # SMTP端口
 		self.email_user = 'nie.jie@kotei.com.cn'  # 邮箱地址
-		self.email_pass = '92795916'  # 263企业邮箱中的授权码
+		self.email_pass = '7e436a0908F6BDF7'  # 263企业邮箱中的授权码
 		
 	def connect_pop3(self):
 		"""连接到POP3服务器"""

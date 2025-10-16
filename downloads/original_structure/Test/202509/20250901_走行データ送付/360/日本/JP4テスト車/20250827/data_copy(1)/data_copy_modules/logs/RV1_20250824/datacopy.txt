@@ -1,0 +1,67 @@
+2025-09-15 16:41:37: ========== Data Copy Task Information ==========
+2025-09-15 16:41:37: Vehicle Number: 3NRV1
+2025-09-15 16:41:37: Copy Start Time: 2025-09-15 16:41:37
+2025-09-15 16:41:37: ===========================================
+
+2025-09-15 16:41:37,950 - Qdrive backup conditions:
+2025-09-15 16:41:37,950 -    copy_plan['qdrive_to_backup']: True
+2025-09-15 16:41:37,950 -    qdrive_drives: ['J:\\', 'F:\\', 'I:\\', 'G:\\']
+2025-09-15 16:41:37,950 -    backup_drive: L:\
+2025-09-15 16:41:40: The source path of Qdrive 203 is: F:\, The size of Qdrive 203 to be copied is: 3323079270 bytes, and file number is 12;
+2025-09-15 16:41:40: The source path of Qdrive 201 is: J:\, The size of Qdrive 201 to be copied is: 4430772360 bytes, and file number is 16;
+2025-09-15 16:41:40: The source path of Qdrive 231 is: G:\, The size of Qdrive 231 to be copied is: 80442 bytes, and file number is 12;
+2025-09-15 16:41:40: Removed archive folder from Qdrive: J:\20250818_archive
+2025-09-15 16:41:40: Qdrive 231 data started to copy to Transfer Drive(K:\);
+2025-09-15 16:41:40: The source path of Qdrive 230 is: I:\, The size of Qdrive 230 to be copied is: 161446 bytes, and file number is 26;
+2025-09-15 16:41:40: Qdrive 201 data started to copy to Transfer Drive(K:\);
+2025-09-15 16:41:40: Qdrive 203 data started to copy to Transfer Drive(K:\);
+2025-09-15 16:41:40: Qdrive 230 data started to copy to Transfer Drive(K:\);
+2025-09-15 16:41:40: Removed archive folder from Qdrive: F:\20250818_archive
+2025-09-15 16:41:40: Removed archive folder from Qdrive: I:\20250818_archive
+2025-09-15 16:41:40: Vector data started to backup to Backup Drive(L:\);
+2025-09-15 16:41:40: Vector data started to copy to Transfer Drive(K:\) - None Drive;
+2025-09-15 16:41:40: Removed archive folder from Qdrive: G:\20250818_archive
+2025-09-15 16:41:40,815 - Qdrive to Backup copy conditions:
+2025-09-15 16:41:40,815 -    copy_plan['qdrive_to_backup']: True
+2025-09-15 16:41:40,815 -    qdrive_drives: ['J:\\', 'F:\\', 'I:\\', 'G:\\']
+2025-09-15 16:41:40,815 -    backup_drive: L:\
+2025-09-15 16:41:40,815 -    qdrive_handler: <data_copy.qdrive_data_handler.QdriveDataHandler object at 0x00000175C3AFB050>
+2025-09-15 16:41:40,815 -    qdrive_number_mapping: {'J:\\': '201', 'F:\\': '203', 'I:\\': '230', 'G:\\': '231'}
+2025-09-15 16:41:40,815 - Started Qdrive 201 (J:\) to Backup copy task
+2025-09-15 16:41:40,815 - Started Qdrive 203 (F:\) to Backup copy task
+2025-09-15 16:41:40,815 - Started Qdrive 230 (I:\) to Backup copy task
+2025-09-15 16:41:40,815 - Started Qdrive 231 (G:\) to Backup copy task
+2025-09-15 16:41:40,815 - Total started 10 copy tasks
+2025-09-15 16:41:40: The source path of Qdrive 231 is: G:\, The size of Qdrive 231 to be backup is: 80442 bytes, and file number is 12;
+2025-09-15 16:41:40: The source path of Qdrive 230 is: I:\, The size of Qdrive 230 to be backup is: 161446 bytes, and file number is 26;
+2025-09-15 16:41:40: The source path of Qdrive 203 is: F:\, The size of Qdrive 203 to be backup is: 3323079270 bytes, and file number is 12;
+2025-09-15 16:41:40: The source path of Qdrive 201 is: J:\, The size of Qdrive 201 to be backup is: 4430772360 bytes, and file number is 16;
+2025-09-15 16:41:40: Qdrive 201 data started to backup to Backup Drive(L:\) - A Drive;
+2025-09-15 16:41:40: Qdrive 230 data started to backup to Backup Drive(L:\) - A Drive;
+2025-09-15 16:41:40: Qdrive 203 data started to backup to Backup Drive(L:\) - A Drive;
+2025-09-15 16:41:40: Qdrive 231 data started to backup to Backup Drive(L:\) - A Drive;
+2025-09-15 16:41:41: Qdrive 231 data has been copied to Transfer Drive(K:\), with data size: 115585248 bytes, and file number is 40;
+2025-09-15 16:41:41: Qdrive 231 data has been copied successfully;
+2025-09-15 16:41:41: Qdrive 231 data has been backup to Backup Drive(L:\), with data size: 80442 bytes, and file number is 12;
+2025-09-15 16:41:41: Qdrive 230 data has been copied to Transfer Drive(K:\), with data size: 120828128 bytes, and file number is 40;
+2025-09-15 16:41:41: Qdrive 231 data has been backup successfully;
+2025-09-15 16:41:41: Qdrive 230 data has been copied successfully;
+2025-09-15 16:41:43: Qdrive 230 data has been backup to Backup Drive(L:\), with data size: 161446 bytes, and file number is 26;
+2025-09-15 16:41:43: Qdrive 230 data has been backup successfully;
+2025-09-15 16:42:06: Vector data has been copied to Transfer Drive(K:\), with data size: 683796220 bytes, and file number is 258;
+2025-09-15 16:42:06: Vector data has been copied successfully;
+2025-09-15 16:42:25: Qdrive 203 data has been copied to Transfer Drive(K:\), with data size: 6498352795 bytes, and file number is 61;
+2025-09-15 16:42:25: Qdrive 203 data has been copied successfully;
+2025-09-15 16:42:26: Vector data has been backup to Backup Drive(L:\), with data size: 683796220 bytes, and file number is 258;
+2025-09-15 16:42:26: Vector data has been backup successfully;
+2025-09-15 16:42:45: Qdrive 201 data has been copied to Transfer Drive(K:\), with data size: 7754093518 bytes, and file number is 66;
+2025-09-15 16:42:45: Qdrive 201 data has been copied successfully;
+2025-09-15 16:42:59: Qdrive 203 data has been backup to Backup Drive(L:\), with data size: 3323079270 bytes, and file number is 12;
+2025-09-15 16:42:59: Qdrive 203 data has been backup successfully;
+2025-09-15 16:43:06: Qdrive 201 data has been backup to Backup Drive(L:\), with data size: 4430772360 bytes, and file number is 16;
+2025-09-15 16:43:06: Qdrive 201 data has been backup successfully;
+2025-09-15 16:43:08: Exported 1 Vector third-level folders to folderstructure.txt
+2025-09-15 16:43:10: Qdrive data folder has been renamed to: 20250818_archive on J:\
+2025-09-15 16:43:12: Qdrive data folder has been renamed to: 20250818_archive on F:\
+2025-09-15 16:43:14: Qdrive data folder has been renamed to: 20250818_archive on I:\
+2025-09-15 16:43:16: Qdrive data folder has been renamed to: 20250818_archive on G:\
