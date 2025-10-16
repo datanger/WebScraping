@@ -31,19 +31,44 @@ from src.sp_automation.login_status_detector import LoginStatusDetector, LoginPa
 
 def find_browser_executable():
     """查找浏览器可执行文件"""
-    possible_paths = [
-        # Edge
-        "/usr/bin/microsoft-edge",
-        "/usr/bin/msedge",
-        "/snap/bin/microsoft-edge",
-        "/opt/microsoft/msedge/msedge",
-        # Chrome
-        "/usr/bin/google-chrome",
-        "/usr/bin/chromium-browser",
-        "/snap/bin/chromium",
-        "/opt/google/chrome/chrome",
-    ]
+    import platform
+    import shutil
     
+    system = platform.system()
+    
+    if system == "Windows":
+        possible_paths = [
+            # Edge
+            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+            r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+            # Chrome
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            # Chromium
+            r"C:\Program Files (x86)\Chromium\Application\chrome.exe",
+            r"C:\Program Files\Chromium\Application\chrome.exe",
+        ]
+    else:  # Linux/macOS
+        possible_paths = [
+            # Edge
+            "/usr/bin/microsoft-edge",
+            "/usr/bin/msedge",
+            "/snap/bin/microsoft-edge",
+            "/opt/microsoft/msedge/msedge",
+            # Chrome
+            "/usr/bin/google-chrome",
+            "/usr/bin/chromium-browser",
+            "/snap/bin/chromium",
+            "/opt/google/chrome/chrome",
+        ]
+    
+    # 首先尝试从PATH中查找
+    for browser_name in ["msedge", "chrome", "chromium"]:
+        browser_path = shutil.which(browser_name)
+        if browser_path:
+            return browser_path
+    
+    # 然后尝试预定义路径
     for path in possible_paths:
         if os.path.exists(path):
             return path
@@ -74,7 +99,12 @@ def start_debug_browser(debug_port=9222, target_url=None):
     print(f"✅ 找到浏览器: {browser_path}")
     
     # 创建用户数据目录
-    user_data_dir = Path.home() / ".config" / "debug_browser"
+    import platform
+    system = platform.system()
+    if system == "Windows":
+        user_data_dir = Path.home() / "AppData" / "Local" / "debug_browser"
+    else:  # Linux/macOS
+        user_data_dir = Path.home() / ".config" / "debug_browser"
     user_data_dir.mkdir(parents=True, exist_ok=True)
     
     # 启动命令
@@ -1078,10 +1108,18 @@ async def download_single_file(scanner, page, file_elem_or_data, file_index, tot
                             possible_paths.append(Path.cwd() / "downloads" / file_name)
                             
                             # 3. 系统默认下载目录
-                            possible_paths.extend([
-                                Path.home() / "下载" / file_name,  # 中文下载目录
-                                Path.home() / "Downloads" / file_name,  # 英文下载目录
-                            ])
+                            import platform
+                            system = platform.system()
+                            if system == "Windows":
+                                possible_paths.extend([
+                                    Path.home() / "Downloads" / file_name,
+                                    Path.home() / "下载" / file_name,  # 中文系统
+                                ])
+                            else:  # Linux/macOS
+                                possible_paths.extend([
+                                    Path.home() / "Downloads" / file_name,
+                                    Path.home() / "下载" / file_name,  # 中文系统
+                                ])
                             
                             # 4. 项目根目录下的downloads
                             possible_paths.append(Path("downloads") / file_name)
@@ -1506,12 +1544,23 @@ class DownloadQueueManager:
                                     
                                     if task_status and task_status.status.value == 'completed' and task_status.file_size and task_status.file_size > 0:
                                         # 检查实际文件是否存在
-                                        possible_paths = [
-                                            Path.home() / "下载" / result['file_name'],
-                                            Path.home() / "Downloads" / result['file_name'],
-                                            Path("downloads") / result['file_name'],
-                                            Path.cwd() / "downloads" / result['file_name']
-                                        ]
+                                        # 跨平台下载路径检测
+                                        import platform
+                                        system = platform.system()
+                                        if system == "Windows":
+                                            possible_paths = [
+                                                Path.home() / "Downloads" / result['file_name'],
+                                                Path.home() / "下载" / result['file_name'],  # 中文系统
+                                                Path("downloads") / result['file_name'],
+                                                Path.cwd() / "downloads" / result['file_name']
+                                            ]
+                                        else:  # Linux/macOS
+                                            possible_paths = [
+                                                Path.home() / "Downloads" / result['file_name'],
+                                                Path.home() / "下载" / result['file_name'],  # 中文系统
+                                                Path("downloads") / result['file_name'],
+                                                Path.cwd() / "downloads" / result['file_name']
+                                            ]
                                         
                                         for path in possible_paths:
                                             if path.exists() and path.stat().st_size > 0:
@@ -1562,12 +1611,23 @@ class DownloadQueueManager:
                                 # 2. 验证浏览器下载任务是否真正完成
                                 if task_status and task_status.status.value == 'completed':
                                     # 3. 检查实际文件是否存在且大小大于0
-                                    possible_paths = [
-                                        Path.home() / "下载" / result['file_name'],
-                                        Path.home() / "Downloads" / result['file_name'],
-                                        Path("downloads") / result['file_name'],
-                                        Path.cwd() / "downloads" / result['file_name']
-                                    ]
+                                    # 跨平台下载路径检测
+                                    import platform
+                                    system = platform.system()
+                                    if system == "Windows":
+                                        possible_paths = [
+                                            Path.home() / "Downloads" / result['file_name'],
+                                            Path.home() / "下载" / result['file_name'],  # 中文系统
+                                            Path("downloads") / result['file_name'],
+                                            Path.cwd() / "downloads" / result['file_name']
+                                        ]
+                                    else:  # Linux/macOS
+                                        possible_paths = [
+                                            Path.home() / "Downloads" / result['file_name'],
+                                            Path.home() / "下载" / result['file_name'],  # 中文系统
+                                            Path("downloads") / result['file_name'],
+                                            Path.cwd() / "downloads" / result['file_name']
+                                        ]
                                     
                                     for path in possible_paths:
                                         if path.exists() and path.stat().st_size > 0:
@@ -1987,8 +2047,9 @@ def is_safe_download_path(download_path):
     try:
         from pathlib import Path
         
-        # 允许的下载路径
-        allowed_base_path = Path("/home/ki-zj-1586/work/nj/WebScraping/downloads").resolve()
+        # 允许的下载路径 - 使用项目根目录
+        project_root = Path(__file__).parent.parent
+        allowed_base_path = (project_root / "downloads").resolve()
         
         # 检查路径是否在允许的基路径内
         try:
@@ -2078,8 +2139,12 @@ def get_security_summary():
         except Exception:
             pass
         
+        # 获取项目根目录
+        project_root = Path(__file__).parent.parent
+        allowed_download_path = str((project_root / "downloads").resolve())
+        
         return {
-            "allowed_download_path": "/home/ki-zj-1586/work/nj/WebScraping/downloads",
+            "allowed_download_path": allowed_download_path,
             "total_downloaded": total_downloaded,
             "forbidden_actions": forbidden_actions,
             "allowed_actions": allowed_actions
@@ -2597,8 +2662,8 @@ def generate_markdown_report(json_file_path: str) -> str:
         
         file_details = report_data.get("file_details", [])
         if file_details:
-            md_content.append("| 序号 | 文件名 | 状态 | 文件大小 | 下载速度 | 重试次数 | 解压状态 |")
-            md_content.append("|------|--------|------|----------|----------|----------|----------|")
+            md_content.append("| 序号 | 文件名 | 状态 | 文件大小 | 下载速度 | 重试次数 | 解压状态 | 原始地址 | 原始目录结构 |")
+            md_content.append("|------|--------|------|----------|----------|----------|----------|----------|--------------|")
             
             for i, file_info in enumerate(file_details, 1):
                 file_name = file_info.get("file_name", "未知")
@@ -2632,9 +2697,93 @@ def generate_markdown_report(json_file_path: str) -> str:
                 else:
                     extract_status = "⏳ 未解压"
                 
-                md_content.append(f"| {i} | {file_name} | {status} | {size_str} | {speed_str} | {retry_count} | {extract_status} |")
+                # 原始地址 - 使用Markdown超链接格式
+                page_url = file_info.get("page_url", "")
+                if page_url:
+                    # 创建可点击的超链接，显示文本截断但链接完整
+                    if len(page_url) > 50:
+                        display_text = page_url[:47] + "..."
+                    else:
+                        display_text = page_url
+                    original_url = f"[{display_text}]({page_url})"
+                else:
+                    original_url = "未知"
+                
+                # 原始目录结构
+                directory_structure = file_info.get("directory_structure", {})
+                if directory_structure and directory_structure.get("folder_path"):
+                    folder_path = directory_structure.get("folder_path", [])
+                    if folder_path:
+                        original_path = " → ".join(folder_path)
+                        if len(original_path) > 30:
+                            original_path = original_path[:27] + "..."
+                    else:
+                        original_path = "根目录"
+                else:
+                    original_path = "未知"
+                
+                md_content.append(f"| {i} | {file_name} | {status} | {size_str} | {speed_str} | {retry_count} | {extract_status} | {original_url} | {original_path} |")
         
         md_content.append("")
+        
+        # 3.5. 完整原始地址和目录结构列表
+        md_content.append("### 完整原始地址和目录结构列表")
+        md_content.append("")
+        
+        for i, file_info in enumerate(file_details, 1):
+            file_name = file_info.get("file_name", "未知")
+            page_url = file_info.get("page_url", "")
+            directory_structure = file_info.get("directory_structure", {})
+            
+            md_content.append(f"{i}. **{file_name}**")
+            
+            if page_url:
+                md_content.append(f"   - 地址: `{page_url}`")
+            
+            # 显示完整的原始目录结构
+            full_directory_path = "未知"
+            
+            # 优先从URL中解析完整路径
+            if page_url:
+                try:
+                    import urllib.parse
+                    import re
+                    
+                    # 解码URL
+                    decoded_url = urllib.parse.unquote(page_url)
+                    
+                    # 从URL中提取完整路径
+                    # 查找 /sites/站点名/Shared Documents/ 之后的部分
+                    sites_pattern = r'/sites/[^/]+/Shared Documents/(.+)'
+                    sites_match = re.search(sites_pattern, decoded_url)
+                    if sites_match:
+                        # 获取实际的文件路径部分
+                        actual_path = sites_match.group(1)
+                        # 按 / 分割路径，过滤掉空字符串和URL参数
+                        path_components = []
+                        for comp in actual_path.split('/'):
+                            if comp and not any(char in comp for char in ['&', '?', '=', 'viewid', 'csf', 'web', 'e', 'FolderCTID']):
+                                # 解码组件
+                                decoded_comp = urllib.parse.unquote(comp)
+                                if decoded_comp and not any(char in decoded_comp for char in ['&', '?', '=']):
+                                    path_components.append(decoded_comp)
+                        
+                        if path_components:
+                            full_directory_path = " → ".join(path_components)
+                except Exception:
+                    pass
+            
+            # 如果URL解析失败，使用directory_structure中的信息
+            if full_directory_path == "未知" and directory_structure and directory_structure.get("folder_path"):
+                folder_path = directory_structure.get("folder_path", [])
+                if folder_path:
+                    full_directory_path = " → ".join(folder_path)
+                else:
+                    full_directory_path = "根目录"
+            
+            md_content.append(f"   - 完整目录结构: `{full_directory_path}`")
+            
+            md_content.append("")
         
         # 4. 解压信息汇总
         md_content.append("## 📦 解压信息汇总")
@@ -2659,6 +2808,63 @@ def generate_markdown_report(json_file_path: str) -> str:
         md_content.append(f"| 失败解压文件数 | {failed_extracts} |")
         md_content.append(f"| 总解压文件数 | {total_extracted} |")
         md_content.append("")
+        
+        # 4.5. 下载后文件目录结构
+        md_content.append("## 📂 下载后文件目录结构")
+        md_content.append("")
+        
+        # 收集所有解压路径
+        extract_paths = set()
+        for file_info in file_details:
+            extract_info = file_info.get("extract_info", {})
+            if extract_info and extract_info.get("extract_path"):
+                extract_path = extract_info.get("extract_path", "")
+                if extract_path:
+                    extract_paths.add(extract_path)
+        
+        if extract_paths:
+            md_content.append("### 目录结构概览")
+            md_content.append("")
+            
+            # 按路径排序
+            sorted_paths = sorted(extract_paths)
+            for path in sorted_paths:
+                # 提取相对路径部分
+                if "downloads/original_structure/" in path:
+                    relative_path = path.split("downloads/original_structure/")[-1]
+                    md_content.append(f"📁 `{relative_path}`")
+                else:
+                    md_content.append(f"📁 `{path}`")
+            
+            md_content.append("")
+            md_content.append("### 详细目录信息")
+            md_content.append("")
+            
+            for file_info in file_details:
+                file_name = file_info.get("file_name", "未知")
+                extract_info = file_info.get("extract_info", {})
+                if extract_info and extract_info.get("extract_path"):
+                    extract_path = extract_info.get("extract_path", "")
+                    if extract_path:
+                        # 提取相对路径
+                        if "downloads/original_structure/" in extract_path:
+                            relative_path = extract_path.split("downloads/original_structure/")[-1]
+                        else:
+                            relative_path = extract_path
+                        
+                        md_content.append(f"**{file_name}** → `{relative_path}`")
+                        
+                        # 显示解压的文件数量
+                        if extract_info.get("success", False):
+                            extracted_count = extract_info.get("extracted_count", 0)
+                            total_in_zip = extract_info.get("total_files_in_zip", 0)
+                            md_content.append(f"   - 解压文件: {extracted_count}/{total_in_zip} 个")
+                        else:
+                            md_content.append(f"   - 解压状态: 失败")
+                        md_content.append("")
+        else:
+            md_content.append("暂无解压文件目录信息")
+            md_content.append("")
         
         # 5. 安全合规性检查
         md_content.append("## 🔒 安全合规性检查")
@@ -3200,10 +3406,14 @@ async def batch_download_zip_files():
                                 print(f"⚠️ 无法自动点击登录按钮，请手动登录")
                                 input("请手动完成登录，然后按回车键继续...")
                         else:
-                                print(f"⚠️ 自动获取验证码失败（可能是邮箱授权码过期）")
-                                print(f"💡 请手动在浏览器中输入验证码")
-                                print(f"📧 验证码通常会在点击@kotei.com.cn按钮后1-2分钟内发送到邮箱")
-                                input("输入验证码后按回车键继续...")
+                            print(f"⚠️ 自动获取验证码失败（可能是邮箱授权码过期）")
+                            print(f"💡 请手动在浏览器中输入验证码")
+                            print(f"📧 验证码通常会在点击@kotei.com.cn按钮后1-2分钟内发送到邮箱")
+                            input("输入验证码后按回车键继续...")
+                        
+                        # 验证码处理异常处理
+                        try:
+                            pass  # 这里可以添加验证码处理逻辑
                         except Exception as e:
                             print(f"⚠️ 验证码处理失败: {e}")
                             print(f"📄 请手动完成登录流程...")

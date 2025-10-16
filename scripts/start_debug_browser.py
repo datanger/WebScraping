@@ -14,19 +14,44 @@ from pathlib import Path
 
 def find_browser_executable():
     """查找浏览器可执行文件"""
-    possible_paths = [
-        # Edge
-        "/usr/bin/microsoft-edge",
-        "/usr/bin/msedge",
-        "/snap/bin/microsoft-edge",
-        "/opt/microsoft/msedge/msedge",
-        # Chrome
-        "/usr/bin/google-chrome",
-        "/usr/bin/chromium-browser",
-        "/snap/bin/chromium",
-        "/opt/google/chrome/chrome",
-    ]
+    import platform
+    import shutil
     
+    system = platform.system()
+    
+    if system == "Windows":
+        possible_paths = [
+            # Edge
+            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+            r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+            # Chrome
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            # Chromium
+            r"C:\Program Files (x86)\Chromium\Application\chrome.exe",
+            r"C:\Program Files\Chromium\Application\chrome.exe",
+        ]
+    else:  # Linux/macOS
+        possible_paths = [
+            # Edge
+            "/usr/bin/microsoft-edge",
+            "/usr/bin/msedge",
+            "/snap/bin/microsoft-edge",
+            "/opt/microsoft/msedge/msedge",
+            # Chrome
+            "/usr/bin/google-chrome",
+            "/usr/bin/chromium-browser",
+            "/snap/bin/chromium",
+            "/opt/google/chrome/chrome",
+        ]
+    
+    # 首先尝试从PATH中查找
+    for browser_name in ["msedge", "chrome", "chromium"]:
+        browser_path = shutil.which(browser_name)
+        if browser_path:
+            return browser_path
+    
+    # 然后尝试预定义路径
     for path in possible_paths:
         if os.path.exists(path):
             return path
@@ -47,7 +72,12 @@ def start_debug_browser():
     print(f"✅ 找到浏览器: {browser_path}")
     
     # 创建用户数据目录
-    user_data_dir = Path.home() / ".config" / "debug_browser"
+    import platform
+    system = platform.system()
+    if system == "Windows":
+        user_data_dir = Path.home() / "AppData" / "Local" / "debug_browser"
+    else:  # Linux/macOS
+        user_data_dir = Path.home() / ".config" / "debug_browser"
     user_data_dir.mkdir(parents=True, exist_ok=True)
     
     # 启动命令
