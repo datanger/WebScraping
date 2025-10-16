@@ -2975,177 +2975,231 @@ async def batch_download_zip_files():
                     elif login_status == LoginPageStatus.login_required:
                         print(f"🔐 需要登录，login_status_detector已自动点击@kotei.com.cn按钮")
                         print(f"⏳ 等待验证码输入框出现...")
-                        try:
-                            # 等待验证码输入框出现
-                            await page.wait_for_selector('input[name="npotc"][id="idTxtBx_OTC_Password"]', timeout=10000)
-                            print(f"✅ 验证码输入框已出现")
-                            
-                            # 等待45秒让验证码邮件到达
-                            print(f"⏳ 等待45秒让验证码邮件到达...")
-                            await asyncio.sleep(45)
-                            
-                            # 尝试自动获取验证码
-                            print(f"🔍 正在尝试自动获取验证码...")
-                            verification_code = await get_verification_code_from_email()
-                            
-                            if verification_code:
-                                print(f"🔑 自动获取到验证码: {verification_code}")
-                                # 自动输入验证码
-                                await page.fill('input[name="npotc"][id="idTxtBx_OTC_Password"]', verification_code)
-                                await page.wait_for_timeout(1000)
-                                
-                                # 点击提交按钮
-                                submit_button = page.locator('input[type="submit"], button[type="submit"]').first
-                                if await submit_button.count() > 0:
-                                    await submit_button.click()
-                                    print(f"✅ 已自动提交验证码")
-                                    await page.wait_for_timeout(3000)
-                                else:
-                                    print(f"⚠️ 未找到提交按钮，请手动提交")
-                                    input("请手动提交验证码，然后按回车键继续...")
-                                
-                                # 第二步：点击包含手机号的按钮
-                                print(f"🔍 正在查找包含手机号格式的登录按钮...")
-                                phone_login_clicked = False
-                                
-                                # 尝试多种选择器查找包含手机号格式的按钮
-                                phone_login_selectors = [
-                                    'button:has-text("+")',
-                                    'input[value*="+"]',
-                                    'button:has-text("登录")',
-                                    'button:has-text("Login")',
-                                    'input[type="submit"]',
-                                    'button[type="submit"]',
-                                    '#idSIButton9',  # Microsoft 登录按钮的常见ID
-                                    '.btn-primary',
-                                    '[data-report-event="Signin_Submit"]'
+                        
+                        # 智能等待验证码输入框出现
+                        verification_input_found = False
+                        max_wait_time = 15  # 最多等待15秒
+                        check_interval = 1  # 每秒检查一次
+                        
+                        for attempt in range(max_wait_time):
+                            try:
+                                # 检查多种可能的验证码输入框选择器
+                                selectors = [
+                                    'input[name="npotc"][id="idTxtBx_OTC_Password"]',
+                                    'input[name="npotc"]',
+                                    'input[id="idTxtBx_OTC_Password"]',
+                                    'input[type="text"][placeholder*="验证码"]',
+                                    'input[type="text"][placeholder*="验证"]',
+                                    'input[type="text"][aria-label*="验证码"]',
+                                    'input[type="text"][aria-label*="验证"]'
                                 ]
                                 
-                                for selector in phone_login_selectors:
-                                    try:
-                                        elements = page.locator(selector)
-                                        count = await elements.count()
-                                        for i in range(count):
-                                            element = elements.nth(i)
-                                            text = await element.text_content()
-                                            if text and ('+' in text and any(c.isdigit() for c in text)):
-                                                await element.click()
-                                                print(f"✅ 已点击包含手机号格式的登录按钮: {text.strip()}")
-                                                phone_login_clicked = True
-                                                break
-                                        if phone_login_clicked:
-                                            break
-                                    except Exception as e:
-                                        print(f"   ⚠️ 尝试选择器 {selector} 失败: {e}")
-                                        continue
+                                for selector in selectors:
+                                    if await page.locator(selector).count() > 0:
+                                        print(f"✅ 验证码输入框已出现 (选择器: {selector})")
+                                        verification_input_found = True
+                                        break
                                 
-                                if not phone_login_clicked:
-                                    print(f"⚠️ 未找到包含手机号格式的登录按钮，尝试按回车键提交...")
-                                    try:
-                                        await page.keyboard.press('Enter')
-                                        print(f"✅ 已按回车键提交")
-                                        phone_login_clicked = True
-                                    except Exception as e:
-                                        print(f"⚠️ 按回车键失败: {e}")
+                                if verification_input_found:
+                                    break
+                                    
+                                print(f"   🔍 第 {attempt + 1} 次检查验证码输入框...")
+                                await asyncio.sleep(check_interval)
                                 
-                                if phone_login_clicked:
-                                    # 记录点击时间
-                                    phone_click_time = datetime.now()
-                                    print(f"🕐 手机号按钮点击时间: {phone_click_time.strftime('%Y-%m-%d %H:%M:%S')}")
-                                    
-                                    # 延长等待时间到90秒让短信验证码到达
-                                    print(f"⏳ 等待90秒让短信验证码到达...")
-                                    await asyncio.sleep(90)
-                                    
-                                    # 尝试获取短信验证码（传入点击时间）
-                                    print(f"🔍 正在尝试获取短信验证码...")
-                                    sms_verification_code = await get_sms_verification_code_from_email(click_time=phone_click_time)
-                                    
-                                    if sms_verification_code:
-                                        print(f"🔑 自动获取到短信验证码: {sms_verification_code}")
-                                        
-                                        # 查找短信验证码输入框
-                                        sms_input_selectors = [
-                                            'input[name="otc"]',
-                                            'input[id*="otc"]',
-                                            'input[type="text"][placeholder*="验证码"]',
-                                            'input[type="text"][placeholder*="code"]',
-                                            'input[type="text"][placeholder*="OTP"]',
-                                            'input[type="text"]'
-                                        ]
-                                        
-                                        sms_input_found = False
-                                        for selector in sms_input_selectors:
-                                            try:
-                                                sms_input = page.locator(selector).first
-                                                if await sms_input.count() > 0:
-                                                    await sms_input.fill(sms_verification_code)
-                                                    print(f"✅ 已输入短信验证码")
-                                                    sms_input_found = True
-                                                    break
-                                            except Exception as e:
-                                                print(f"   ⚠️ 尝试选择器 {selector} 失败: {e}")
-                                                continue
-                                        
-                                        if not sms_input_found:
-                                            print(f"⚠️ 未找到短信验证码输入框，请手动输入")
-                                            input(f"请手动输入短信验证码 {sms_verification_code}，然后按回车键继续...")
-                                        
-                                        # 查找并点击验证按钮
-                                        verify_button_selectors = [
-                                            'button:has-text("验证")',
-                                            'button:has-text("Verify")',
-                                            'button:has-text("确认")',
-                                            'button:has-text("Confirm")',
-                                            'input[type="submit"]',
-                                            'button[type="submit"]',
-                                            'button:has-text("登录")',
-                                            'button:has-text("Login")',
-                                            'button:has-text("Sign in")',
-                                            '#idSIButton9',
-                                            '.btn-primary'
-                                        ]
-                                        
-                                        verify_button_clicked = False
-                                        for selector in verify_button_selectors:
-                                            try:
-                                                verify_btn = page.locator(selector).first
-                                                if await verify_btn.count() > 0:
-                                                    await verify_btn.click()
-                                                    print(f"✅ 已点击验证按钮")
-                                                    verify_button_clicked = True
-                                                    break
-                                            except Exception as e:
-                                                print(f"   ⚠️ 尝试选择器 {selector} 失败: {e}")
-                                                continue
-                                        
-                                        if not verify_button_clicked:
-                                            print(f"⚠️ 未找到验证按钮，尝试按回车键")
-                                            try:
-                                                await page.keyboard.press('Enter')
-                                                print(f"✅ 已按回车键提交")
-                                                verify_button_clicked = True
-                                            except Exception as e:
-                                                print(f"⚠️ 按回车键失败: {e}")
-                                        
-                                        # 等待登录完成
-                                        print(f"⏳ 等待登录完成...")
-                                        await page.wait_for_timeout(5000)
-                                        
-                                        try:
-                                            await page.wait_for_load_state('networkidle', timeout=10000)
-                                            print(f"✅ 登录流程完成")
-                                        except Exception as e:
-                                            print(f"⚠️ 登录等待超时，继续执行: {e}")
-                                    else:
-                                        print(f"⚠️ 自动获取短信验证码失败")
-                                        print(f"💡 请手动在浏览器中输入短信验证码")
-                                        print(f"📱 短信验证码通常会在点击登录按钮后1-2分钟内发送到手机")
-                                        input("输入短信验证码后按回车键继续...")
-                                else:
-                                    print(f"⚠️ 无法自动点击登录按钮，请手动登录")
-                                    input("请手动完成登录，然后按回车键继续...")
+                            except Exception as e:
+                                print(f"   ⚠️ 检查验证码输入框时出错: {e}")
+                                await asyncio.sleep(check_interval)
+                        
+                        if not verification_input_found:
+                            print(f"⚠️ 未找到验证码输入框，可能页面加载异常")
+                            # 检查页面状态
+                            current_url = page.url
+                            page_title = await page.title()
+                            print(f"   当前URL: {current_url}")
+                            print(f"   页面标题: {page_title}")
+                            
+                            # 尝试重新检测登录状态
+                            print(f"🔄 重新检测登录状态...")
+                            from src.sp_automation.login_status_detector import LoginStatusDetector
+                            detector = LoginStatusDetector()
+                            login_status = await detector.open_target_and_detect(target_url)
+                            if login_status == LoginPageStatus.logged_in:
+                                print(f"✅ 重新检测发现已登录")
+                                # 重新导航到目标页面
+                                await page.goto(target_url)
+                                await page.wait_for_load_state('networkidle', timeout=30000)
+                                print(f"✅ 页面导航成功，当前URL: {page.url}")
+                                print(f"📄 页面标题: {await page.title()}")
                             else:
+                                print(f"❌ 登录状态异常，请手动检查")
+                                return
+                        
+                        # 等待45秒让验证码邮件到达
+                        print(f"⏳ 等待45秒让验证码邮件到达...")
+                        await asyncio.sleep(45)
+                        
+                        # 尝试自动获取验证码
+                        print(f"🔍 正在尝试自动获取验证码...")
+                        verification_code = await get_verification_code_from_email()
+                        
+                        if verification_code:
+                            print(f"🔑 自动获取到验证码: {verification_code}")
+                            # 自动输入验证码
+                            await page.fill('input[name="npotc"][id="idTxtBx_OTC_Password"]', verification_code)
+                            await page.wait_for_timeout(1000)
+                            
+                            # 点击提交按钮
+                            submit_button = page.locator('input[type="submit"], button[type="submit"]').first
+                            if await submit_button.count() > 0:
+                                await submit_button.click()
+                                print(f"✅ 已自动提交验证码")
+                                await page.wait_for_timeout(3000)
+                            else:
+                                print(f"⚠️ 未找到提交按钮，请手动提交")
+                                input("请手动提交验证码，然后按回车键继续...")
+                            
+                            # 第二步：点击包含手机号的按钮
+                            print(f"🔍 正在查找包含手机号格式的登录按钮...")
+                            phone_login_clicked = False
+                            
+                            # 尝试多种选择器查找包含手机号格式的按钮
+                            phone_login_selectors = [
+                                'button:has-text("+")',
+                                'input[value*="+"]',
+                                'button:has-text("登录")',
+                                'button:has-text("Login")',
+                                'input[type="submit"]',
+                                'button[type="submit"]',
+                                '#idSIButton9',  # Microsoft 登录按钮的常见ID
+                                '.btn-primary',
+                                '[data-report-event="Signin_Submit"]'
+                            ]
+                            
+                            for selector in phone_login_selectors:
+                                try:
+                                    elements = page.locator(selector)
+                                    count = await elements.count()
+                                    for i in range(count):
+                                        element = elements.nth(i)
+                                        text = await element.text_content()
+                                        if text and ('+' in text and any(c.isdigit() for c in text)):
+                                            await element.click()
+                                            print(f"✅ 已点击包含手机号格式的登录按钮: {text.strip()}")
+                                            phone_login_clicked = True
+                                            break
+                                    if phone_login_clicked:
+                                        break
+                                except Exception as e:
+                                    print(f"   ⚠️ 尝试选择器 {selector} 失败: {e}")
+                                    continue
+                            
+                            if not phone_login_clicked:
+                                print(f"⚠️ 未找到包含手机号格式的登录按钮，尝试按回车键提交...")
+                                try:
+                                    await page.keyboard.press('Enter')
+                                    print(f"✅ 已按回车键提交")
+                                    phone_login_clicked = True
+                                except Exception as e:
+                                    print(f"⚠️ 按回车键失败: {e}")
+                            
+                            if phone_login_clicked:
+                                # 记录点击时间
+                                phone_click_time = datetime.now()
+                                print(f"🕐 手机号按钮点击时间: {phone_click_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                                
+                                # 延长等待时间到90秒让短信验证码到达
+                                print(f"⏳ 等待90秒让短信验证码到达...")
+                                await asyncio.sleep(90)
+                                
+                                # 尝试获取短信验证码（传入点击时间）
+                                print(f"🔍 正在尝试获取短信验证码...")
+                                sms_verification_code = await get_sms_verification_code_from_email(click_time=phone_click_time)
+                                
+                                if sms_verification_code:
+                                    print(f"🔑 自动获取到短信验证码: {sms_verification_code}")
+                                    
+                                    # 查找短信验证码输入框
+                                    sms_input_selectors = [
+                                        'input[name="otc"]',
+                                        'input[id*="otc"]',
+                                        'input[type="text"][placeholder*="验证码"]',
+                                        'input[type="text"][placeholder*="code"]',
+                                        'input[type="text"][placeholder*="OTP"]',
+                                        'input[type="text"]'
+                                    ]
+                                    
+                                    sms_input_found = False
+                                    for selector in sms_input_selectors:
+                                        try:
+                                            sms_input = page.locator(selector).first
+                                            if await sms_input.count() > 0:
+                                                await sms_input.fill(sms_verification_code)
+                                                print(f"✅ 已输入短信验证码")
+                                                sms_input_found = True
+                                                break
+                                        except Exception as e:
+                                            print(f"   ⚠️ 尝试选择器 {selector} 失败: {e}")
+                                            continue
+                                    
+                                    if not sms_input_found:
+                                        print(f"⚠️ 未找到短信验证码输入框，请手动输入")
+                                        input(f"请手动输入短信验证码 {sms_verification_code}，然后按回车键继续...")
+                                    
+                                    # 查找并点击验证按钮
+                                    verify_button_selectors = [
+                                        'button:has-text("验证")',
+                                        'button:has-text("Verify")',
+                                        'button:has-text("确认")',
+                                        'button:has-text("Confirm")',
+                                        'input[type="submit"]',
+                                        'button[type="submit"]',
+                                        'button:has-text("登录")',
+                                        'button:has-text("Login")',
+                                        'button:has-text("Sign in")',
+                                        '#idSIButton9',
+                                        '.btn-primary'
+                                    ]
+                                    
+                                    verify_button_clicked = False
+                                    for selector in verify_button_selectors:
+                                        try:
+                                            verify_btn = page.locator(selector).first
+                                            if await verify_btn.count() > 0:
+                                                await verify_btn.click()
+                                                print(f"✅ 已点击验证按钮")
+                                                verify_button_clicked = True
+                                                break
+                                        except Exception as e:
+                                            print(f"   ⚠️ 尝试选择器 {selector} 失败: {e}")
+                                            continue
+                                    
+                                    if not verify_button_clicked:
+                                        print(f"⚠️ 未找到验证按钮，尝试按回车键")
+                                        try:
+                                            await page.keyboard.press('Enter')
+                                            print(f"✅ 已按回车键提交")
+                                            verify_button_clicked = True
+                                        except Exception as e:
+                                            print(f"⚠️ 按回车键失败: {e}")
+                                    
+                                    # 等待登录完成
+                                    print(f"⏳ 等待登录完成...")
+                                    await page.wait_for_timeout(5000)
+                                    
+                                    try:
+                                        await page.wait_for_load_state('networkidle', timeout=10000)
+                                        print(f"✅ 登录流程完成")
+                                    except Exception as e:
+                                        print(f"⚠️ 登录等待超时，继续执行: {e}")
+                                else:
+                                    print(f"⚠️ 自动获取短信验证码失败")
+                                    print(f"💡 请手动在浏览器中输入短信验证码")
+                                    print(f"📱 短信验证码通常会在点击登录按钮后1-2分钟内发送到手机")
+                                    input("输入短信验证码后按回车键继续...")
+                            else:
+                                print(f"⚠️ 无法自动点击登录按钮，请手动登录")
+                                input("请手动完成登录，然后按回车键继续...")
+                        else:
                                 print(f"⚠️ 自动获取验证码失败（可能是邮箱授权码过期）")
                                 print(f"💡 请手动在浏览器中输入验证码")
                                 print(f"📧 验证码通常会在点击@kotei.com.cn按钮后1-2分钟内发送到邮箱")

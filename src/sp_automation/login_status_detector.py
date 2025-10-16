@@ -17,6 +17,7 @@ import asyncio
 import json
 import os
 import subprocess
+import sys
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -99,6 +100,12 @@ class LoginStatusDetector:
                 try:
                     click_text = os.getenv("LOGIN_CLICK_TEXT", "@kotei.com.cn")
                     if click_text:
+                        print(f"🔍 正在查找登录按钮: {click_text}")
+                        
+                        # 等待页面完全加载
+                        await page.wait_for_load_state("domcontentloaded", timeout=10000)
+                        await page.wait_for_timeout(2000)  # 额外等待确保动态内容加载
+                        
                         # 优先尝试严格文本匹配
                         locator = page.get_by_text(click_text, exact=False)
                         if await locator.count() == 0:
@@ -106,24 +113,66 @@ class LoginStatusDetector:
                             locator = page.locator(
                                 f"button:has-text(\"{click_text}\"), a:has-text(\"{click_text}\"), div:has-text(\"{click_text}\")"
                             )
+                        
                         if await locator.count() > 0:
-                            await locator.first.click(timeout=3000)
-                            # 等待页面变化
+                            print(f"✅ 找到登录按钮，准备点击")
+                            
+                            # 确保元素可见和可点击
+                            await locator.first.scroll_into_view_if_needed()
+                            await page.wait_for_timeout(1000)
+                            
+                            # 点击按钮
+                            await locator.first.click(timeout=5000)
+                            print(f"🖱️ 已点击登录按钮")
+                            
+                            # 等待页面变化 - 更智能的等待机制
+                            await page.wait_for_timeout(3000)  # 基础等待
+                            
+                            # 等待网络请求稳定
                             try:
-                                await page.wait_for_load_state("networkidle", timeout=5000)
+                                await page.wait_for_load_state("networkidle", timeout=10000)
                             except Exception:
+                                print(f"⚠️ 网络空闲等待超时，继续检测")
                                 pass
+                            
+                            # 额外等待确保页面完全渲染
+                            await page.wait_for_timeout(2000)
+                            
                             # 重新评估登录状态
                             page_url = page.url.lower()
                             title = (await page.title()).lower() if page else ""
                             login_inputs = await page.locator("input[name='loginfmt'], input[type='email'], input[type='password']").count()
+                            
+                            print(f"🔍 点击后页面状态检查:")
+                            print(f"   URL: {page_url}")
+                            print(f"   标题: {title}")
+                            print(f"   登录输入框数量: {login_inputs}")
+                            
                             if not (("login.microsoftonline" in page_url) or ("/login" in page_url) or ("signin" in page_url) or (login_inputs > 0) or ("sign in" in title) or ("登录" in title)):
                                 # 再检查是否已进入文档库
                                 list_loc = page.locator("div.Files, div#appRoot, div#spoAppComponent")
                                 if await list_loc.count() > 0:
+                                    print(f"✅ 已成功登录并进入文档库")
                                     return LoginPageStatus.logged_in
-                except Exception:
-                    pass
+                            else:
+                                print(f"⚠️ 点击后仍显示登录页面，可能点击失败或需要进一步操作")
+                        else:
+                            print(f"❌ 未找到登录按钮: {click_text}")
+                            # 检查是否有输入框，如果有则说明已经在登录页面
+                            login_inputs = await page.locator("input[name='loginfmt'], input[type='email'], input[type='password'], input[name='npotc']").count()
+                            if login_inputs > 0:
+                                print(f"🔍 检测到登录输入框，可能已在登录页面")
+                                return LoginPageStatus.login_required
+                except Exception as e:
+                    print(f"❌ 登录按钮点击异常: {e}")
+                    # 检查是否有输入框作为备用检测
+                    try:
+                        login_inputs = await page.locator("input[name='loginfmt'], input[type='email'], input[type='password'], input[name='npotc']").count()
+                        if login_inputs > 0:
+                            print(f"🔍 异常后检测到登录输入框，继续登录流程")
+                            return LoginPageStatus.login_required
+                    except Exception:
+                        pass
                 return LoginPageStatus.login_required
 
             # Heuristic for doc library presence
