@@ -688,7 +688,7 @@ def get_unique_folder_name(parent_path: Path, folder_name: str) -> str:
 
 
 def format_path_for_display(path: Path) -> str:
-    """格式化路径用于显示（Windows使用原生反斜杠，避免双反斜杠显示）
+    """格式化路径用于显示（使用配置控制路径分隔符）
     
     Args:
         path: Path对象
@@ -697,16 +697,26 @@ def format_path_for_display(path: Path) -> str:
         格式化后的路径字符串
     """
     import platform
+    from src.sp_automation.config import settings
+    
     path_str = str(path)
     
-    # Windows上，str(Path)会产生双反斜杠的显示效果
-    # 我们使用as_posix()来统一显示为正斜杠，或者使用原始路径
-    if platform.system() == "Windows":
-        # 在Windows上，使用原生路径表示（单反斜杠）
-        # 通过替换双反斜杠为单反斜杠来修复显示问题
-        return path_str.replace('\\\\', '\\')
+    # 根据配置决定路径分隔符处理方式
+    if settings.use_windows_path_logic and platform.system() == "Windows":
+        # Windows路径逻辑：使用单反斜杠，避免双反斜杠显示
+        if settings.search_path_separator == "backward":
+            return path_str.replace('\\\\', '\\')
+        elif settings.search_path_separator == "forward":
+            return path_str.replace('\\', '/')
+        else:  # auto
+            # 自动检测：如果路径包含正斜杠，使用正斜杠；否则使用反斜杠
+            if '/' in path_str:
+                return path_str.replace('\\', '/')
+            else:
+                return path_str.replace('\\\\', '\\')
     else:
-        return path_str
+        # 非Windows或禁用Windows路径逻辑：使用正斜杠
+        return path_str.replace('\\', '/')
 
 
 async def wait_for_file_stable_size(file_path: Path, file_name: str, max_wait_seconds: int = 10) -> int:
@@ -1198,6 +1208,7 @@ async def download_single_file(scanner, page, file_elem_or_data, file_index, tot
                             # 4. 项目根目录下的downloads
                             possible_paths.append(Path("downloads") / file_name)
                             
+                            # 首先检查原始文件名
                             for path in possible_paths:
                                 if path.exists():
                                     # 等待文件大小稳定
@@ -1206,6 +1217,28 @@ async def download_single_file(scanner, page, file_elem_or_data, file_index, tot
                                         actual_zip_path = path
                                         actual_file_name = path.name  # 使用实际文件名
                                         print(f"   📁 在 {path} 找到zip文件 (大小: {file_size:,} 字节)")
+                                        break
+                            
+                            # 如果原始文件名没找到，检查浏览器自动重命名的文件
+                            if not actual_zip_path:
+                                base_name = Path(file_name).stem  # 文件名（不含扩展名）
+                                extension = Path(file_name).suffix  # 扩展名
+                                
+                                for base_path in possible_paths:
+                                    base_dir = base_path.parent
+                                    
+                                    # 检查自动重命名的文件 (1), (2), (3) 等
+                                    for i in range(1, 10):  # 检查 (1) 到 (9)
+                                        renamed_path = base_dir / f"{base_name}({i}){extension}"
+                                        if renamed_path.exists():
+                                            file_size = await wait_for_file_stable_size(renamed_path, file_name)
+                                            if file_size > 0:
+                                                actual_zip_path = renamed_path
+                                                actual_file_name = renamed_path.name  # 使用实际文件名
+                                                print(f"   📁 在 {renamed_path} 找到zip文件（自动重命名） (大小: {file_size:,} 字节)")
+                                                break
+                                    
+                                    if actual_zip_path:
                                         break
                             
                             if not actual_zip_path:
@@ -1243,12 +1276,14 @@ async def download_single_file(scanner, page, file_elem_or_data, file_index, tot
 
 
 async def monitor_download_progress_simple(result, progress_callback, scanner, file_name):
-    """简化的下载进度监控（不显示实时速度）"""
+    """智能的下载进度监控（只在状态变化时显示）"""
     import time
     
     start_time = time.time()
     last_size = 0
     last_time = start_time
+    last_progress = 0.0
+    last_status = None
     
     # 监控下载进度
     while True:
@@ -1266,6 +1301,7 @@ async def monitor_download_progress_simple(result, progress_callback, scanner, f
             
         current_time = time.time()
         current_size = task_status.file_size or 0
+        current_status = task_status.status.value
         
         # 计算下载速度（内部使用，不显示）
         if current_size > last_size and current_time > last_time:
@@ -1276,23 +1312,37 @@ async def monitor_download_progress_simple(result, progress_callback, scanner, f
         
         # 更新进度
         if task_status.expected_size and task_status.expected_size > 0:
-            result["progress"] = current_size / task_status.expected_size
+            current_progress = current_size / task_status.expected_size
         elif current_size > 0:
-            result["progress"] = min(current_size / (current_size * 1.1), 0.99)  # 估算进度
+            current_progress = min(current_size / (current_size * 1.1), 0.99)  # 估算进度
+        else:
+            current_progress = 0.0
         
         result["file_size"] = current_size
         result["status"] = "downloading"
+        result["progress"] = current_progress
         
-        # 只在下载完成时更新显示，不显示实时进度
-        if task_status.status.value == 'completed':
-            result["progress"] = 1.0
-            result["status"] = "completed"
-            if progress_callback:
-                await progress_callback(result)
-            break
+        # 只在状态变化或进度显著变化时显示
+        progress_changed = abs(current_progress - last_progress) > 0.1  # 进度变化超过10%
+        status_changed = current_status != last_status
+        
+        if status_changed or progress_changed:
+            if current_status == 'completed':
+                result["progress"] = 1.0
+                result["status"] = "completed"
+                print(f"   ✅ 下载完成: {file_name} ({current_size:,} 字节)")
+                if progress_callback:
+                    await progress_callback(result)
+                break
+            elif current_size > 0 and progress_changed:
+                # 只在进度显著变化时显示
+                progress_percent = int(current_progress * 100)
+                print(f"   📊 下载进度: {file_name} ({progress_percent}% - {current_size:,} 字节)")
         
         last_size = current_size
         last_time = current_time
+        last_progress = current_progress
+        last_status = current_status
 
 
 async def update_unified_report_realtime(progress_tracker, total_files, max_concurrent, report_filepath):
@@ -1958,11 +2008,11 @@ async def batch_download_files(scanner, page, file_elements, unified_log_file=No
         try:
             safety_summary = get_security_summary()
             print(f"\n🔒 安全摘要报告:")
-            print(f"   允许的下载路径: {safety_summary.get('allowed_download_path', 'N/A')}")
+            print(f"   允许的搜索路径: {safety_summary.get('allowed_download_path', 'N/A')}")
             print(f"   已下载文件数: {safety_summary.get('total_downloaded', 0)}")
             print(f"   禁止的操作: {len(safety_summary.get('forbidden_actions', []))} 种")
             print(f"   允许的操作: {len(safety_summary.get('allowed_actions', []))} 种")
-            print(f"   ✅ 所有操作均符合安全指南")
+            print(f"   ✅ 所有操作均限制在指定搜索路径内，不会访问上级目录")
         except Exception as e:
             print(f"   ⚠️ 生成安全摘要失败: {e}")
         
@@ -2216,12 +2266,30 @@ def get_security_summary():
         except Exception:
             pass
         
-        # 获取项目根目录
-        project_root = Path(__file__).parent.parent
-        allowed_download_path = str((project_root / "downloads").resolve())
+        # 获取起始搜索路径作为允许的操作范围
+        from src.sp_automation.config import settings
+        import urllib.parse
+        from urllib.parse import urlparse, parse_qs
+        
+        # 解析起始搜索路径
+        target_url = settings.target_url
+        parsed_url = urlparse(target_url)
+        query_params = parse_qs(parsed_url.query)
+        id_param = query_params.get('id', [''])[0]
+        
+        if id_param:
+            # 解码路径获取起始搜索路径
+            decoded_path = urllib.parse.unquote(id_param)
+            if '/Shared Documents/' in decoded_path:
+                start_search_path = decoded_path.split('/Shared Documents/')[1]
+                allowed_search_path = f"SharePoint: /Shared Documents/{start_search_path}"
+            else:
+                allowed_search_path = f"SharePoint: {decoded_path}"
+        else:
+            allowed_search_path = "SharePoint: 根目录"
         
         return {
-            "allowed_download_path": allowed_download_path,
+            "allowed_download_path": allowed_search_path,
             "total_downloaded": total_downloaded,
             "forbidden_actions": forbidden_actions,
             "allowed_actions": allowed_actions
@@ -3595,7 +3663,30 @@ async def batch_download_zip_files():
                         except Exception as e:
                             print(f"     ⚠️ 统一日志存储失败: {e}")
 
-                await scanner.recursive_scanner.recursive_scan_folders(page, target_url, current_path="", zip_found_callback=_zip_found_logger)
+                # 从URL中提取当前路径，作为递归扫描的起始路径
+                import urllib.parse
+                from urllib.parse import urlparse, parse_qs
+                
+                # 解析URL获取路径信息
+                parsed_url = urlparse(target_url)
+                query_params = parse_qs(parsed_url.query)
+                id_param = query_params.get('id', [''])[0]
+                
+                if id_param:
+                    # 解码路径
+                    decoded_path = urllib.parse.unquote(id_param)
+                    # 提取Shared Documents之后的部分
+                    if '/Shared Documents/' in decoded_path:
+                        current_path = decoded_path.split('/Shared Documents/')[1]
+                        print(f"🎯 从URL解析的当前路径: {current_path}")
+                    else:
+                        current_path = ""
+                        print(f"⚠️ 无法从URL解析路径，使用空路径")
+                else:
+                    current_path = ""
+                    print(f"⚠️ URL中没有id参数，使用空路径")
+                
+                await scanner.recursive_scanner.recursive_scan_folders(page, target_url, current_path=current_path, zip_found_callback=_zip_found_logger)
 
                 # 使用内置递归扫描器收集的ZIP文件信息构建下载候选列表
                 zip_candidates = []
@@ -3718,13 +3809,12 @@ async def restart_scan_from_beginning(page, target_url: str, max_depth: int, vis
             return []
 
 
-async def recursive_find_zip_files(page, max_depth=5, current_depth=0, current_path="", visited_paths: set | None = None, zip_collector: list | None = None, target_url: str = None, retry_count: int = 0):
-    """递归查找所有层级的zip文件 - 严格遵循安全操作指南（更稳健的点击与去重）"""
+async def recursive_find_zip_files(page, max_depth=None, current_depth=0, current_path="", visited_paths: set | None = None, zip_collector: list | None = None, target_url: str = None, retry_count: int = 0):
+    """递归查找所有层级的zip文件 - 无深度限制，完全搜索"""
+    from src.sp_automation.config import settings
+    
     if visited_paths is None:
         visited_paths = set()
-    if current_depth >= max_depth:
-        print(f"  ⚠️ 达到最大深度 {max_depth}，停止递归")
-        return []
     
     # 最大重试次数限制
     MAX_RETRIES = 3

@@ -4,6 +4,7 @@ SharePoint 文件下载器模块
 提供安全的文件下载功能
 """
 
+import asyncio
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any
@@ -103,16 +104,75 @@ class SharePointFileDownloader:
                 original_name = file_info['name']
                 save_path = downloads_dir / original_name
             
-            # 保存文件：优先从浏览器临时文件复制，避免落盘延迟
-            tmp_path = await download.path()
-            if tmp_path:
-                try:
-                    import shutil
-                    shutil.copyfile(tmp_path, save_path)
-                except Exception:
-                    await download.save_as(save_path)
+            # 完全依赖浏览器原生下载，不进行任何Playwright文件操作
+            print(f"   🔄 等待浏览器完成原生下载...")
+            
+            # 等待浏览器完成下载（最多等待60秒）
+            actual_save_path = None
+            last_status = None  # 记录上次状态，只在状态变化时显示
+            
+            for attempt in range(60):
+                await asyncio.sleep(1)
+                
+                # 检查原始文件名
+                if save_path.exists() and save_path.stat().st_size > 0:
+                    actual_save_path = save_path
+                    print(f"   ✅ 浏览器原生下载完成: {save_path.stat().st_size:,} 字节")
+                    break
+                
+                # 检查浏览器自动重命名的文件 (1), (2), (3) 等
+                base_name = save_path.stem  # 文件名（不含扩展名）
+                extension = save_path.suffix  # 扩展名
+                
+                # 查找可能的自动重命名文件
+                for i in range(1, 10):  # 检查 (1) 到 (9)
+                    renamed_path = downloads_dir / f"{base_name}({i}){extension}"
+                    if renamed_path.exists() and renamed_path.stat().st_size > 0:
+                        actual_save_path = renamed_path
+                        print(f"   ✅ 浏览器原生下载完成（自动重命名）: {renamed_path.name} ({renamed_path.stat().st_size:,} 字节)")
+                        break
+                
+                if actual_save_path:
+                    break
+                    
+                # 检查是否有临时文件正在下载
+                temp_files = list(downloads_dir.glob("*.crdownload")) + list(downloads_dir.glob("*.part"))
+                current_status = "downloading" if temp_files else "waiting"
+                
+                # 只在状态变化时显示提示
+                if current_status != last_status:
+                    if current_status == "downloading":
+                        print(f"   ⏳ 浏览器正在下载中...")
+                    else:
+                        print(f"   ⏳ 等待浏览器开始下载...")
+                    last_status = current_status
             else:
-                await download.save_as(save_path)
+                # 如果60秒后还没有完成，最后检查一次所有可能的文件
+                possible_files = [save_path]
+                base_name = save_path.stem
+                extension = save_path.suffix
+                
+                # 添加可能的自动重命名文件
+                for i in range(1, 10):
+                    possible_files.append(downloads_dir / f"{base_name}({i}){extension}")
+                
+                found_file = None
+                for file_path in possible_files:
+                    if file_path.exists() and file_path.stat().st_size > 0:
+                        found_file = file_path
+                        break
+                
+                if found_file:
+                    actual_save_path = found_file
+                    print(f"   ✅ 浏览器下载完成: {found_file.name} ({found_file.stat().st_size:,} 字节)")
+                else:
+                    print(f"   ❌ 文件未找到，下载可能失败")
+                    print(f"   🔍 已检查的路径: {[str(p) for p in possible_files]}")
+                    raise Exception("文件未找到，下载失败")
+            
+            # 更新save_path为实际保存的路径
+            if actual_save_path:
+                save_path = actual_save_path
 
             # 仅依据浏览器下载器状态判定
             failure_reason = await download.failure()

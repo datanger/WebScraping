@@ -10,12 +10,12 @@ load_dotenv()
 
 @dataclass
 class Settings:
-    """中文注释：集中式配置对象。"""
+    """集中式配置对象 - 所有配置都从.env文件读取"""
 
     # 登录/目标
     login_email: str = os.getenv("SP_LOGIN_EMAIL", "")
-    login_password: str = os.getenv("SP_LOGIN_PASSWORD", "")  # 如需脚本输入密码
-    target_url: str = os.getenv("SP_TARGET_URL", "https://scautoeng.sharepoint.com/sites/KOTEI-SCAE/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FKOTEI%2DSCAE%2FShared%20Documents%2FGEN1%2E5%E4%B8%AD%E5%9B%BDFOT%2F%E3%83%87%E3%83%BC%E3%82%BF%E8%A7%A3%E6%9E%90%2F%E8%AA%8D%E8%AD%98%E7%B3%BB%2F%E8%B5%B0%E8%B7%AF%E8%AA%8D%E8%AD%98%2F%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E6%A4%9C%E8%A8%8E%2FTest&viewid=8e19c37a%2Dacdb%2D4c40%2Da22e%2D92e27e7e3366&csf=1&web=1&e=NWcbWt&FolderCTID=0x01200090D0082931AED242A8680C59FF4AF68D")
+    login_password: str = os.getenv("SP_LOGIN_PASSWORD", "")
+    target_url: str = os.getenv("SP_TARGET_URL", "")
 
     # 存储会话
     storage_state_file: str = os.getenv("SP_STORAGE_STATE", "storage/storage_state.json")
@@ -24,7 +24,7 @@ class Settings:
     headless: bool = os.getenv("SP_HEADLESS", "true").lower() == "true"
     slow_mo_ms: int = int(os.getenv("SP_SLOWMO_MS", "0"))
     proxy: Optional[str] = os.getenv("SP_PROXY", None)
-    browser_type: str = os.getenv("SP_BROWSER_TYPE", "chromium")  # chromium|edge|firefox
+    browser_type: str = os.getenv("SP_BROWSER_TYPE", "chromium")
     persistent_mode: bool = os.getenv("SP_PERSISTENT_MODE", "false").lower() == "true"
     user_data_dir: str = os.getenv("SP_USER_DATA_DIR", "storage/browser_profile")
 
@@ -32,8 +32,8 @@ class Settings:
     default_timeout_ms: int = int(os.getenv("SP_TIMEOUT_MS", "30000"))
 
     # MFA/OTP 相关
-    mfa_provider: str = os.getenv("SP_MFA_PROVIDER", "manual")  # manual|totp|imap
-    totp_secret: str = os.getenv("SP_TOTP_SECRET", "")  # TOTP 共享密钥（若使用 TOTP）
+    mfa_provider: str = os.getenv("SP_MFA_PROVIDER", "manual")
+    totp_secret: str = os.getenv("SP_TOTP_SECRET", "")
 
     imap_host: str = os.getenv("SP_IMAP_HOST", "")
     imap_user: str = os.getenv("SP_IMAP_USER", "")
@@ -43,11 +43,16 @@ class Settings:
     imap_search_subject_kw: str = os.getenv("SP_IMAP_SUBJECT_KW", "Microsoft 验证码")
     
     # 下载设置
-    download_method: str = os.getenv("SP_DOWNLOAD_METHOD", "browser_default")  # browser_default|intercepted
-    download_path: str = os.getenv("SP_DOWNLOAD_PATH", "")  # 空字符串表示使用浏览器默认路径
+    download_method: str = os.getenv("SP_DOWNLOAD_METHOD", "browser_default")
+    download_path: str = os.getenv("SP_DOWNLOAD_PATH", "")
     
     # 批量下载设置
-    batch_download_concurrency: int = int(os.getenv("BATCH_DOWNLOAD_CONCURRENCY", "2"))  # 并行下载数量
+    batch_download_concurrency: int = int(os.getenv("BATCH_DOWNLOAD_CONCURRENCY", "2"))
+    
+    # 搜索路径设置
+    search_path_separator: str = os.getenv("SP_SEARCH_PATH_SEPARATOR", "auto")
+    use_windows_path_logic: bool = os.getenv("SP_USE_WINDOWS_PATH_LOGIC", "true").lower() == "true"
+    search_timeout: int = int(os.getenv("SP_SEARCH_TIMEOUT", "30"))
 
 
 settings = Settings()

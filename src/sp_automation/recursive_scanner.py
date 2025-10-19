@@ -25,9 +25,15 @@ class SharePointRecursiveScanner:
         """
         self.scanner = scanner
     
-    async def recursive_scan_folders(self, page: Page, current_url: str, current_path: str = "", depth: int = 0, zip_found_callback: Optional[Any] = None):
-        """递归扫描文件夹"""
-        print(f"\n📁 扫描: {current_path or '根目录'}")
+    async def recursive_scan_folders(self, page: Page, current_url: str, current_path: str = "", depth: int = 0, zip_found_callback: Optional[Any] = None, max_depth: Optional[int] = None):
+        """递归扫描文件夹 - 无深度限制，完全搜索"""
+        from .config import settings
+        
+        # 显示当前扫描路径，如果是深层路径则显示完整路径
+        if current_path and current_path != "":
+            print(f"\n📁 扫描深层路径: {current_path} (深度: {depth})")
+        else:
+            print(f"\n📁 扫描: {current_path or '根目录'} (深度: {depth})")
         
         # 直接扫描当前页面的文件和文件夹，避免重复
         current_page_folders = []
@@ -227,7 +233,7 @@ class SharePointRecursiveScanner:
             if await self._click_folder_and_scan(page, folder, folder_path, depth):
                 # 成功进入文件夹，递归扫描
                 new_url = page.url
-                await self.recursive_scan_folders(page, new_url, folder_path, depth + 1, zip_found_callback=zip_found_callback)
+                await self.recursive_scan_folders(page, new_url, folder_path, depth + 1, zip_found_callback=zip_found_callback, max_depth=max_depth)
                 
                 # 返回上级目录
                 await self._navigate_back(page, current_url)
