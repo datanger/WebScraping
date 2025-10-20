@@ -2457,13 +2457,13 @@ async def get_sms_verification_code_from_email(click_time=None):
         print(f"🕐 手机号按钮点击时间: {click_time.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"⏰ 查找点击时间之后的短信转发邮件...")
         
-        # 获取最近10封邮件（增加数量以找到时间匹配的邮件）
-        start_index = max(1, num_messages - 10 + 1)
+        # 从最新邮件开始往前搜索（从第num_messages封开始往前查找）
         verification_code = None
         best_match = None
         best_time_diff = float('inf')
         
-        for i in range(start_index, num_messages + 1):
+        # 从最新邮件开始往前查找（最多查找最近10封）
+        for i in range(num_messages, max(1, num_messages - 10), -1):
             try:
                 # 获取邮件
                 raw_email = b'\n'.join(mail.retr(i)[1])
@@ -3385,9 +3385,9 @@ async def batch_download_zip_files():
                                 print(f"❌ 登录状态异常，请手动检查")
                                 return
                         
-                        # 等待45秒让验证码邮件到达
-                        print(f"⏳ 等待45秒让验证码邮件到达...")
-                        await asyncio.sleep(45)
+                        # 等待30秒让验证码邮件到达
+                        print(f"⏳ 等待30秒让验证码邮件到达...")
+                        await asyncio.sleep(30)
                         
                         # 尝试自动获取验证码
                         print(f"🔍 正在尝试自动获取验证码...")
@@ -3458,9 +3458,9 @@ async def batch_download_zip_files():
                                 phone_click_time = datetime.now()
                                 print(f"🕐 手机号按钮点击时间: {phone_click_time.strftime('%Y-%m-%d %H:%M:%S')}")
                                 
-                                # 延长等待时间到90秒让短信验证码到达
-                                print(f"⏳ 等待90秒让短信验证码到达...")
-                                await asyncio.sleep(90)
+                                # 延长等待时间到30秒让短信验证码到达
+                                print(f"⏳ 等待30秒让短信验证码到达...")
+                                await asyncio.sleep(30)
                                 
                                 # 尝试获取短信验证码（传入点击时间）
                                 print(f"🔍 正在尝试获取短信验证码...")
